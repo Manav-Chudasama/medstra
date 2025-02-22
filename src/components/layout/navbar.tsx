@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Menu, X, Loader2 } from "lucide-react";
+import { Menu, X, Loader2, UserCircle } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { useAuth, useClerk, UserButton } from "@clerk/nextjs";

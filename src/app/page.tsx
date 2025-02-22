@@ -5,8 +5,6 @@ import Image from "next/image";
 import { ArrowRight, CheckCircle2, Shield, Stethoscope } from "lucide-react";
 import { FadeIn } from "@/components/animations/fade-in";
 import { SlideIn } from "@/components/animations/slide-in";
-import Lottie from "lottie-react";
-import medicalAnimation from "@/animations/medical-animation.json";
 
 export default function Home() {
   return (
@@ -48,13 +46,15 @@ export default function Home() {
                 )}
               </div>
             </SlideIn>
-            <SlideIn direction="right" className="flex-1 relative max-w-xl">
+            <SlideIn direction="right" className="flex relative justify-center">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-3xl -z-10" />
-              <Lottie
-                animationData={medicalAnimation}
-                className="w-full h-full"
-                loop={true}
-                style={{ maxWidth: "600px" }}
+              <Image
+                src="/images/hero.png"
+                alt="AI Medical Assistant"
+                width={600}
+                height={600}
+                className="rounded-3xl shadow-2xl"
+                priority
               />
             </SlideIn>
           </div>
