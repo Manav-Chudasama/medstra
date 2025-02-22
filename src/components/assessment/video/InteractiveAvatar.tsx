@@ -400,8 +400,32 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
       //   handleSpeak(newMessage);
       // });
 
-      newAvatar.on(StreamingEvents.USER_SILENCE, () => {
-        console.log('User is silent');
+      newAvatar.on(StreamingEvents.USER_END_MESSAGE, (event) => {
+        console.log('User end message', event);
+      });
+
+      newAvatar.on(StreamingEvents.USER_START, (event) => {
+        console.log('User start', event);
+      });
+
+
+      // When the avatar is talking, we need to stop the avatar from listening
+      newAvatar.on(StreamingEvents.AVATAR_START_TALKING, (event) => {
+        console.log('Avatar is talking', event);
+      });
+
+      newAvatar.on(StreamingEvents.AVATAR_STOP_TALKING, (event) => {
+        console.log('Avatar is not talking', event);
+      });
+
+      // When the user is speaking we need to stop the avatar from talking
+      // newAvatar.on(StreamingEvents.USER_TALKING_MESSAGE, (event) => {
+      //   console.log('User is talking', event);
+      //   newAvatar.interrupt();
+      // });
+
+      newAvatar.on(StreamingEvents.USER_SILENCE, (event) => {
+        console.log('User is silent', event);
       });
 
       newAvatar.on(StreamingEvents.STREAM_DISCONNECTED, endSession);
@@ -412,6 +436,12 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
         voice: {
           rate: 1.5,
           emotion: VoiceEmotion.FRIENDLY,
+          elevenlabsSettings: {
+            stability: 1,
+            similarity_boost: 1,
+            style: 1,
+            use_speaker_boost: false,
+          },
         },
         disableIdleTimeout: true,
         avatarName: "Ann_Doctor_Sitting_public",
@@ -492,7 +522,13 @@ Remember to:
 - Flag any concerning symptoms or combinations
 - Consider interactions between different health factors
 - Provide evidence-based recommendations
-- Maintain focus on both immediate and long-term health implications`
+- Maintain focus on both immediate and long-term health implications
+
+Important: When you determine it's time to generate the final reports, end your last spoken message with a \r tag. 
+For example: "Thank you for completing this health assessment. I'll generate your reports now.\r"
+
+Do not mention the \r tag in speech - it's only used as a signal to generate reports.
+`,
       });
 
       await newAvatar.startVoiceChat({ useSilencePrompt: true });
@@ -507,7 +543,8 @@ Remember to:
       // });
 
       // const { reply } = await response.json();
-      // await newAvatar.speak({ text: reply, taskType: TaskType.REPEAT });
+
+      await newAvatar.speak({ text: "Hey there! Let's start the conversation.", taskType: TaskType.TALK, taskMode: TaskMode.SYNC });
 
     } catch (error) {
       console.error("Error starting session:", error);
