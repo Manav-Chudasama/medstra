@@ -11,11 +11,12 @@ import Image from "next/image";
 import { useAuth, useClerk, UserButton } from "@clerk/nextjs";
 import { ModeToggle } from "@/components/mode-toggle";
 
+import { useLottie } from "lottie-react";
+import medicalAnimation from "@/animations/doctor.json";
+
 const navigation = [
   { name: "Home", href: "/" },
   { name: "How It Works", href: "/how-it-works" },
-  { name: "Assessment", href: "/assessment/select" },
-  { name: "Reports", href: "/reports" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
@@ -31,6 +32,13 @@ export function Navbar() {
   const { isLoaded, isSignedIn } = useAuth();
   const { openSignIn, openSignUp } = useClerk();
 
+  const defaultOptions = {
+    animationData: medicalAnimation,
+    loop: true,
+  };
+
+  const { View } = useLottie(defaultOptions);
+
   // Show loading state
   if (!isLoaded) {
     return (
@@ -39,13 +47,7 @@ export function Navbar() {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <div className="relative h-8 w-8">
-                <Image
-                  src="/logo.png"
-                  alt="Medstra Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                />
+                {View}
               </div>
               <span className="hidden font-bold text-xl sm:inline-block bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Medstra
@@ -77,13 +79,7 @@ export function Navbar() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2">
             <div className="relative h-8 w-8">
-              <Image
-                src="/logo.png"
-                alt="Medstra Logo"
-                fill
-                className="object-contain"
-                priority
-              />
+              {View}
             </div>
             <span className="hidden font-bold text-xl sm:inline-block bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Medstra

@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -5,10 +7,17 @@ import Image from "next/image";
 import { ArrowRight, CheckCircle2, Shield, Stethoscope } from "lucide-react";
 import { FadeIn } from "@/components/animations/fade-in";
 import { SlideIn } from "@/components/animations/slide-in";
-import Lottie from "lottie-react";
+import { useLottie } from "lottie-react";
 import medicalAnimation from "@/animations/medical-animation.json";
 
 export default function Home() {
+  const defaultOptions = {
+    animationData: medicalAnimation,
+    loop: true,
+  };
+
+  const { View } = useLottie(defaultOptions);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -49,13 +58,8 @@ export default function Home() {
               </div>
             </SlideIn>
             <SlideIn direction="right" className="flex-1 relative max-w-xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-3xl -z-10" />
-              <Lottie
-                animationData={medicalAnimation}
-                className="w-full h-full"
-                loop={true}
-                style={{ maxWidth: "600px" }}
-              />
+              <div className="absolute inset-0 rounded-3xl -z-10" />
+              <div className="w-full">{View}</div>
             </SlideIn>
           </div>
         </div>
@@ -154,7 +158,7 @@ const testimonials = [
   },
   {
     quote:
-      "VMEA's AI-powered assessments have significantly improved our customer experience while ensuring thorough medical evaluations.",
+      "Medstra's AI-powered assessments have significantly improved our customer experience while ensuring thorough medical evaluations.",
     author: "Michael Chen",
     role: "Head of Innovation, Global Insurance Group",
     image: "/images/testimonial2.jpg",

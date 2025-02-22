@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +13,24 @@ import {
 
 interface PreAssessmentProps {
   onBack: () => void;
-  onNext: () => void;
+  onNext: (data: { height: string; weight: string; smoker: string; exerciseFrequency: string }) => void;
 }
 
 export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [smoker, setSmoker] = useState("no");
+  const [exerciseFrequency, setExerciseFrequency] = useState("");
+
+  const handleContinue = () => {
+    if (!height || !weight || !exerciseFrequency) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+    // Proceed to the next step with the collected data
+    onNext({ height, weight, smoker, exerciseFrequency });
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -27,18 +42,32 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
 
       <div className="grid gap-6">
         <div className="grid gap-2">
-          <Label htmlFor="height">Height (cm)</Label>
-          <Input id="height" type="number" placeholder="Enter your height" />
+          <Label htmlFor="height">Height (cm) <span className="text-red-500">*</span></Label>
+          <Input
+            id="height"
+            type="number"
+            placeholder="Enter your height"
+            value={height}
+            onChange={(e) => setHeight(e.target.value)}
+            required
+          />
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="weight">Weight (kg)</Label>
-          <Input id="weight" type="number" placeholder="Enter your weight" />
+          <Label htmlFor="weight">Weight (kg) <span className="text-red-500">*</span></Label>
+          <Input
+            id="weight"
+            type="number"
+            placeholder="Enter your weight"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            required
+          />
         </div>
 
         <div className="grid gap-2">
-          <Label>Do you smoke?</Label>
-          <RadioGroup defaultValue="no">
+          <Label>Do you smoke? <span className="text-red-500">*</span></Label>
+          <RadioGroup value={smoker} onValueChange={setSmoker}>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="yes" id="smoke-yes" />
               <Label htmlFor="smoke-yes">Yes</Label>
@@ -51,8 +80,8 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="exercise">Exercise Frequency</Label>
-          <Select>
+          <Label htmlFor="exercise">Exercise Frequency <span className="text-red-500">*</span></Label>
+          <Select value={exerciseFrequency} onValueChange={setExerciseFrequency}>
             <SelectTrigger id="exercise">
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
@@ -70,7 +99,7 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={onNext}>
+        <Button onClick={handleContinue}>
           Continue
         </Button>
       </div>

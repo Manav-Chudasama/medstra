@@ -40,6 +40,10 @@ export default function AssessmentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const assessmentType = searchParams.get("type");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [smoker, setSmoker] = useState("no");
+  const [exerciseFrequency, setExerciseFrequency] = useState("");
 
   useEffect(() => {
     // If no assessment type is selected, redirect to select page
@@ -79,6 +83,12 @@ export default function AssessmentPage() {
                 <VideoAssessment
                   onBack={() => setCurrentStep(2)}
                   onNext={() => setCurrentStep(4)}
+                  preAssessmentData={{
+                    height,
+                    weight,
+                    smoker,
+                    exerciseFrequency
+                  }}
                   assessmentType={assessmentType}
                 />
               ) : (
@@ -90,15 +100,19 @@ export default function AssessmentPage() {
                     {currentStep === 2 && (
                       <PreAssessment
                         onBack={() => setCurrentStep(1)}
-                        onNext={() => setCurrentStep(3)}
-                        assessmentType={assessmentType}
+                        onNext={(data) => {
+                          setHeight(data.height);
+                          setWeight(data.weight);
+                          setSmoker(data.smoker);
+                          setExerciseFrequency(data.exerciseFrequency);
+                          setCurrentStep(3);
+                        }}
                       />
                     )}
                     {currentStep === 4 && (
                       <ReviewSubmit
                         onBack={() => setCurrentStep(3)}
                         onSubmit={() => console.log("Assessment submitted")}
-                        assessmentType={assessmentType}
                       />
                     )}
                   </CardContent>
