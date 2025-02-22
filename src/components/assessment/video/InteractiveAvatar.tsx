@@ -382,6 +382,9 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
 
   async function startSession() {
     setIsLoadingSession(true);
+    let currentMessage = ''; // Store the current message being built
+    let currentTaskId = ''; // Track the current task ID
+
     try {
       const token = await fetchAccessToken();
       const newAvatar = new StreamingAvatar({ token });
@@ -390,43 +393,59 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
         setStream(event.detail);
       });
 
-      // newAvatar.on(StreamingEvents.USER_TALKING_MESSAGE, (message) => {
-      //   if (!acceptMessages) return;
-
-      //   const newMessage = message.detail.message;
-
-      //   setAcceptMessages(false);
-
-      //   handleSpeak(newMessage);
-      // });
-
-      newAvatar.on(StreamingEvents.USER_END_MESSAGE, (event) => {
-        console.log('User end message', event);
+      // Collect partial messages while avatar is talking
+      newAvatar.on(StreamingEvents.AVATAR_TALKING_MESSAGE, (event) => {
+        const { message, task_id } = event.detail;
+        
+        // If this is a new task, reset the current message
+        if (task_id !== currentTaskId) {
+          currentMessage = '';
+          currentTaskId = task_id;
+        }
+        
+        // Append the new partial message
+        currentMessage += message;
+        console.log('Building message:', currentMessage);
       });
 
-      newAvatar.on(StreamingEvents.USER_START, (event) => {
-        console.log('User start', event);
+      // Process the complete message when avatar stops talking
+      newAvatar.on(StreamingEvents.AVATAR_STOP_TALKING, async () => {
+        console.log('Complete message:', currentMessage);
+        
+        // Check if the message contains the report generation tag
+        if (currentMessage.includes('\b')) {
+          // Process report generation
+          const [speechText, reportCommand] = currentMessage.split('\b');
+          // Handle report generation here
+        }
+        
+        // Reset the message buffer
+        currentMessage = '';
+        currentTaskId = '';
+        
+        await newAvatar.startVoiceChat({
+          useSilencePrompt: true, // Enable silence prompts
+        });
+
+        await newAvatar.startListening();
+      });
+
+      // Handle when the user ends their message
+      newAvatar.on(StreamingEvents.USER_END_MESSAGE, async () => {
+        console.log('User ended message');
+
+        // Close voice chat when the user ends their message
+        await newAvatar.closeVoiceChat();
+
+        await newAvatar.stopListening();
+      });
+
+      // Handle when the user starts speaking
+      newAvatar.on(StreamingEvents.USER_START, async () => {
+        console.log('User started speaking');
       });
 
 
-      // When the avatar is talking, we need to stop the avatar from listening
-      newAvatar.on(StreamingEvents.AVATAR_START_TALKING, (event) => {
-        console.log('Avatar is talking', event);
-      });
-
-      newAvatar.on(StreamingEvents.AVATAR_STOP_TALKING, (event) => {
-        console.log('Avatar is not talking', event);
-      });
-
-      // When the user is speaking we need to stop the avatar from talking
-      // newAvatar.on(StreamingEvents.USER_TALKING_MESSAGE, (event) => {
-      //   console.log('User is talking', event);
-      //   newAvatar.interrupt();
-      // });
-
-      newAvatar.on(StreamingEvents.USER_SILENCE, (event) => {
-        console.log('User is silent', event);
-      });
 
       newAvatar.on(StreamingEvents.STREAM_DISCONNECTED, endSession);
       setAvatar(newAvatar);
@@ -436,12 +455,6 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
         voice: {
           rate: 1.5,
           emotion: VoiceEmotion.FRIENDLY,
-          elevenlabsSettings: {
-            stability: 1,
-            similarity_boost: 1,
-            style: 1,
-            use_speaker_boost: false,
-          },
         },
         disableIdleTimeout: true,
         avatarName: "Ann_Doctor_Sitting_public",
@@ -531,20 +544,16 @@ Do not mention the \r tag in speech - it's only used as a signal to generate rep
 `,
       });
 
-      await newAvatar.startVoiceChat({ useSilencePrompt: true });
+      await newAvatar.startVoiceChat({
+        useSilencePrompt: true, // Start voice chat with silence prompts
+      });
 
-      // const response = await fetch("/api/openai", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     prompt: "Hey there! Let's start the conversation.",
-      //     preAssessmentData: preAssessmentData,
-      //   }),
-      // });
-
-      // const { reply } = await response.json();
-
-      await newAvatar.speak({ text: "Hey there! Let's start the conversation.", taskType: TaskType.TALK, taskMode: TaskMode.SYNC });
+      // Initial greeting
+      await newAvatar.speak({ 
+        text: "Hello! I'm here to conduct your health assessment. How are you feeling today?",
+        taskType: TaskType.TALK,
+        taskMode: TaskMode.SYNC 
+      });
 
     } catch (error) {
       console.error("Error starting session:", error);
