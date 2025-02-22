@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Activity, Brain, Lungs } from "lucide-react";
+import { Heart, Activity, Brain } from "lucide-react";
 
 interface HealthMetric {
   icon: any;
