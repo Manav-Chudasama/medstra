@@ -16,7 +16,6 @@ import medicalAnimation from "@/animations/doctor.json";
 
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "How It Works", href: "/how-it-works" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];

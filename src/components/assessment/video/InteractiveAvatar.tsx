@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import protobuf from "protobufjs";
 import { Room, RoomEvent, VideoPresets } from "livekit-client";
 import { Input } from "@/components/ui/input";
+import { useUser } from "@clerk/nextjs";
 
 const jsonDescriptor = {
   options: {
@@ -408,6 +409,7 @@ export default function InteractiveAvatar({
   const mediaStream = useRef<HTMLVideoElement>(null);
   const [acceptMessages, setAcceptMessages] = useState(true);
   const [message, setMessage] = useState<string>("");
+  const { user } = useUser();
 
   // Update the type definition for messageStream
   type Message = {
@@ -482,6 +484,7 @@ export default function InteractiveAvatar({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               conversation: messages,
+              userId: user?.id
             }),
           });
 
