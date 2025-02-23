@@ -7,7 +7,7 @@ import { Camera, Mic, MicOff, VideoOff, Maximize2, Minimize2 } from "lucide-reac
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import InteractiveAvatar from "@/components/assessment/video/InteractiveAvatar";
-
+import { Language } from "@/components/assessment/video/InteractiveAvatar";
 interface VideoAssessmentProps {
   onBack: () => void;
   onNext: () => void;
@@ -18,9 +18,10 @@ interface VideoAssessmentProps {
     smoker: string;
     exerciseFrequency: string;
   };
+  selectedLanguage: Language;
 }
 
-export function VideoAssessment({ onBack, onNext, assessmentType, preAssessmentData }: VideoAssessmentProps) {
+export function VideoAssessment({ onBack, onNext, assessmentType, preAssessmentData, selectedLanguage }: VideoAssessmentProps) {
   const { height, weight, smoker, exerciseFrequency } = preAssessmentData;
 
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -93,10 +94,12 @@ export function VideoAssessment({ onBack, onNext, assessmentType, preAssessmentD
         {/* AI Assistant Preview */}
         {isAvatarVisible && <InteractiveAvatar preAssessmentData={
           {
-            height: height,
-            weight: weight,
+            height: parseFloat(height),
+            weight: parseFloat(weight),
             smoker: smoker === "yes",
-            exerciseFrequency: exerciseFrequency
+            exerciseFrequency: exerciseFrequency,
+            type: assessmentType,
+            language: selectedLanguage
           }
         } />}
 

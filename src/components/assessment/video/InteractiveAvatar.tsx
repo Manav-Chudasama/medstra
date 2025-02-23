@@ -6,104 +6,100 @@ import protobuf from "protobufjs";
 import { Room, RoomEvent, VideoPresets } from "livekit-client";
 
 const jsonDescriptor = {
-  "options": {
-    "syntax": "proto3"
+  options: {
+    syntax: "proto3",
   },
-  "nested": {
-    "pipecat": {
-      "nested": {
-        "TextFrame": {
-          "fields": {
-            "id": {
-              "type": "uint64",
-              "id": 1
+  nested: {
+    pipecat: {
+      nested: {
+        TextFrame: {
+          fields: {
+            id: {
+              type: "uint64",
+              id: 1,
             },
-            "name": {
-              "type": "string",
-              "id": 2
+            name: {
+              type: "string",
+              id: 2,
             },
-            "text": {
-              "type": "string",
-              "id": 3
-            }
-          }
-        },
-        "AudioRawFrame": {
-          "fields": {
-            "id": {
-              "type": "uint64",
-              "id": 1
+            text: {
+              type: "string",
+              id: 3,
             },
-            "name": {
-              "type": "string",
-              "id": 2
-            },
-            "audio": {
-              "type": "bytes",
-              "id": 3
-            },
-            "sampleRate": {
-              "type": "uint32",
-              "id": 4
-            },
-            "numChannels": {
-              "type": "uint32",
-              "id": 5
-            }
-          }
-        },
-        "TranscriptionFrame": {
-          "fields": {
-            "id": {
-              "type": "uint64",
-              "id": 1
-            },
-            "name": {
-              "type": "string",
-              "id": 2
-            },
-            "text": {
-              "type": "string",
-              "id": 3
-            },
-            "userId": {
-              "type": "string",
-              "id": 4
-            },
-            "timestamp": {
-              "type": "string",
-              "id": 5
-            }
-          }
-        },
-        "Frame": {
-          "oneofs": {
-            "frame": {
-              "oneof": [
-                "text",
-                "audio",
-                "transcription"
-              ]
-            }
           },
-          "fields": {
-            "text": {
-              "type": "TextFrame",
-              "id": 1
+        },
+        AudioRawFrame: {
+          fields: {
+            id: {
+              type: "uint64",
+              id: 1,
             },
-            "audio": {
-              "type": "AudioRawFrame",
-              "id": 2
+            name: {
+              type: "string",
+              id: 2,
             },
-            "transcription": {
-              "type": "TranscriptionFrame",
-              "id": 3
-            }
-          }
-        }
-      }
-    }
-  }
+            audio: {
+              type: "bytes",
+              id: 3,
+            },
+            sampleRate: {
+              type: "uint32",
+              id: 4,
+            },
+            numChannels: {
+              type: "uint32",
+              id: 5,
+            },
+          },
+        },
+        TranscriptionFrame: {
+          fields: {
+            id: {
+              type: "uint64",
+              id: 1,
+            },
+            name: {
+              type: "string",
+              id: 2,
+            },
+            text: {
+              type: "string",
+              id: 3,
+            },
+            userId: {
+              type: "string",
+              id: 4,
+            },
+            timestamp: {
+              type: "string",
+              id: 5,
+            },
+          },
+        },
+        Frame: {
+          oneofs: {
+            frame: {
+              oneof: ["text", "audio", "transcription"],
+            },
+          },
+          fields: {
+            text: {
+              type: "TextFrame",
+              id: 1,
+            },
+            audio: {
+              type: "AudioRawFrame",
+              id: 2,
+            },
+            transcription: {
+              type: "TranscriptionFrame",
+              id: 3,
+            },
+          },
+        },
+      },
+    },
+  },
 };
 
 const API_CONFIG = {
@@ -116,12 +112,44 @@ export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export enum Language {
+  Bulgarian = "bg",
+  Chinese = "zh",
+  Czech = "cs",
+  Danish = "da",
+  Dutch = "nl",
+  English = "en",
+  Finnish = "fi",
+  French = "fr",
+  German = "de",
+  Greek = "el",
+  Hindi = "hi",
+  Hungarian = "hu",
+  Indonesian = "id",
+  Italian = "it",
+  Japanese = "ja",
+  Korean = "ko",
+  Malay = "ms",
+  Norwegian = "no",
+  Polish = "pl",
+  Portuguese = "pt",
+  Romanian = "ro",
+  Russian = "ru",
+  Slovak = "sk",
+  Spanish = "es",
+  Swedish = "sv",
+  Turkish = "tr",
+  Ukrainian = "uk",
+  Vietnamese = "vi",
+}
+
 export function convertFloat32ToS16PCM(float32Array: Float32Array) {
   const int16Array = new Int16Array(float32Array.length);
 
   for (let i = 0; i < float32Array.length; i++) {
     const clampedValue = Math.max(-1, Math.min(1, float32Array[i]));
-    int16Array[i] = clampedValue < 0 ? clampedValue * 32768 : clampedValue * 32767;
+    int16Array[i] =
+      clampedValue < 0 ? clampedValue * 32768 : clampedValue * 32767;
   }
   return int16Array;
 }
@@ -161,7 +189,7 @@ export function convertFloat32ToS16PCM(float32Array: Float32Array) {
 //         avatar_name: "Ann_Doctor_Sitting_public", // Use the specified avatar name
 //       }),
 //     });
-    
+
 //     const data = await response.json();
 
 //     const sessionInfo = data.data;
@@ -194,7 +222,7 @@ export function convertFloat32ToS16PCM(float32Array: Float32Array) {
 
 //     webSocket.current.addEventListener("message", async (event) => {
 //       console.log("Received message:", event.data);
-      
+
 //       const data = JSON.parse(event.data);
 //       if (data.type === "transcript") {
 //         console.log("Received transcript:", data.text);
@@ -202,9 +230,9 @@ export function convertFloat32ToS16PCM(float32Array: Float32Array) {
 //         const response = await fetch("/api/openai", {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ 
+//           body: JSON.stringify({
 //             prompt: data.text,
-//             preAssessmentData 
+//             preAssessmentData
 //           }),
 //         });
 
@@ -250,7 +278,7 @@ export function convertFloat32ToS16PCM(float32Array: Float32Array) {
 //     try {
 //       // Request microphone access first
 //       await requestMicrophoneAccess();
-      
+
 //       const token = await getSessionToken();
 //       const session = await createSession(token);
 //       setSessionInfo(session);
@@ -325,10 +353,10 @@ export function convertFloat32ToS16PCM(float32Array: Float32Array) {
 //       <div className="flex flex-col">
 //         <div className="relative aspect-video bg-muted">
 //           {stream && (
-//             <video 
-//               ref={mediaStream} 
-//               autoPlay 
-//               playsInline 
+//             <video
+//               ref={mediaStream}
+//               autoPlay
+//               playsInline
 //               className="w-full h-full object-cover"
 //             />
 //           )}
@@ -361,18 +389,26 @@ export function convertFloat32ToS16PCM(float32Array: Float32Array) {
 //   );
 // }
 
-export default function InteractiveAvatar({ preAssessmentData }: { preAssessmentData: {
-  height: string;
-  weight: string;
-  smoker: boolean;
-  exerciseFrequency: string;
-}  }) {
+export default function InteractiveAvatar({
+  preAssessmentData,
+}: {
+  preAssessmentData: {
+    height: number;
+    weight: number;
+    smoker: boolean;
+    exerciseFrequency: string;
+    type: string;
+    language: Language;
+  };
+}) {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
   const [avatar, setAvatar] = useState<StreamingAvatar | null>(null);
   const mediaStream = useRef<HTMLVideoElement>(null);
   const [acceptMessages, setAcceptMessages] = useState(true);
   const [message, setMessage] = useState<string>("");
+
+  const [messages, setMessages] = useState<string[]>([]);
 
   async function fetchAccessToken() {
     const response = await fetch("/api/get-access-token", { method: "POST" });
@@ -382,8 +418,10 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
 
   async function startSession() {
     setIsLoadingSession(true);
-    let currentMessage = ''; // Store the current message being built
-    let currentTaskId = ''; // Track the current task ID
+    let currentMessage = ""; // Store the current message being built
+    let currentTaskId = ""; // Track the current task ID
+
+    let messages = [];
 
     try {
       const token = await fetchAccessToken();
@@ -396,33 +434,63 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
       // Collect partial messages while avatar is talking
       newAvatar.on(StreamingEvents.AVATAR_TALKING_MESSAGE, (event) => {
         const { message, task_id } = event.detail;
-        
+
         // If this is a new task, reset the current message
         if (task_id !== currentTaskId) {
-          currentMessage = '';
+          currentMessage = "";
           currentTaskId = task_id;
         }
-        
+
         // Append the new partial message
         currentMessage += message;
-        console.log('Building message:', currentMessage);
       });
 
       // Process the complete message when avatar stops talking
       newAvatar.on(StreamingEvents.AVATAR_STOP_TALKING, async () => {
-        console.log('Complete message:', currentMessage);
-        
+        console.log("Complete message:", currentMessage);
+
+        messages.push({
+          sender: "AI",
+          text: currentMessage,
+        });
+
         // Check if the message contains the report generation tag
-        if (currentMessage.includes('\b')) {
-          // Process report generation
-          const [speechText, reportCommand] = currentMessage.split('\b');
-          // Handle report generation here
+        if (
+          currentMessage.toLowerCase().includes("generating") ||
+          currentMessage.toLowerCase().includes("generating reports") ||
+          currentMessage.toLowerCase().includes("patient report") ||
+          currentMessage.toLowerCase().includes("underwriting report") ||
+          currentMessage.toLowerCase().includes("generate") ||
+          currentMessage.toLowerCase().includes("report") ||
+          currentMessage.toLowerCase().includes("reports") ||
+          currentMessage.toLowerCase().includes("generate report")
+        ) {
+          // Process report generation here
+
+          // Send request to openai
+          const response = await fetch("/api/openai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation: messages,
+            }),
+          });
+
+          const { reply } = await response.json();
+
+          console.log("OpenAI response:", reply);
+
+          await newAvatar.speak({
+            text: "Your report has been added to the reports section under your profile, as well as it has been sent to your email and your insurance provider. Thank you for using Medstra!",
+            taskType: TaskType.REPEAT,
+            taskMode: TaskMode.SYNC,
+          });
         }
-        
+
         // Reset the message buffer
-        currentMessage = '';
-        currentTaskId = '';
-        
+        currentMessage = "";
+        currentTaskId = "";
+
         await newAvatar.startVoiceChat({
           useSilencePrompt: true, // Enable silence prompts
         });
@@ -432,7 +500,7 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
 
       // Handle when the user ends their message
       newAvatar.on(StreamingEvents.USER_END_MESSAGE, async () => {
-        console.log('User ended message');
+        console.log("User ended message");
 
         // Close voice chat when the user ends their message
         await newAvatar.closeVoiceChat();
@@ -440,12 +508,19 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
         await newAvatar.stopListening();
       });
 
-      // Handle when the user starts speaking
-      newAvatar.on(StreamingEvents.USER_START, async () => {
-        console.log('User started speaking');
+      newAvatar.on(StreamingEvents.USER_TALKING_MESSAGE, (event) => {
+        console.log("User talking message", event.detail.message);
+
+        messages.push({
+          sender: "User",
+          text: event.detail.message,
+        });
       });
 
-
+      // Handle when the user starts speaking
+      newAvatar.on(StreamingEvents.USER_START, async () => {
+        console.log("User started speaking");
+      });
 
       newAvatar.on(StreamingEvents.STREAM_DISCONNECTED, endSession);
       setAvatar(newAvatar);
@@ -458,90 +533,100 @@ export default function InteractiveAvatar({ preAssessmentData }: { preAssessment
         },
         disableIdleTimeout: true,
         avatarName: "Ann_Doctor_Sitting_public",
-        knowledgeBase: `You are an AI medical examiner conducting comprehensive health assessments. Follow this structured approach:
+        knowledgeBase: `You are a female AI medical examiner, your name is Medstra, you have to conduct specialized health assessments. Your approach varies based on the assessment type: ${
+          preAssessmentData.type
+        }.
+        You are currently in ${preAssessmentData.language} language.
 
-Initial Assessment:
-- Begin by acknowledging the patient's pre-assessment data (height, weight, smoking status, exercise frequency)
-- Calculate and reference BMI, noting any health implications
-- Start with a professional greeting and explain the assessment process
+Assessment Types and Protocols:
 
-Systematic Questioning (ask these in separate messages):
-1. General Health:
-   - Current medications and supplements
-   - Recent hospitalizations or surgeries
-   - Family history of serious conditions
-   - Sleep patterns and quality
-   - Stress levels and mental health
+CARDIOVASCULAR HEALTH:
+- Focus on heart health and circulation
+- Blood pressure and pulse discussion
+- Physical activity tolerance
+- Chest pain or discomfort history
+- Family history of heart conditions
+- Lifestyle factors affecting heart health
+- Medications related to heart health
+- Stress levels and their cardiac impact
 
-2. Symptom Assessment:
-   - Current health complaints or symptoms
-   - Duration and severity of symptoms
-   - Pattern of symptoms (constant, intermittent)
-   - Aggravating and alleviating factors
+NEUROLOGICAL SCREENING:
+- Cognitive function assessment
+- Memory and concentration
+- Balance and coordination discussion
+- Headaches and migraines
+- Sleep patterns and quality
+- Stress and mental health
+- Neurological symptoms
+- Family history of neurological conditions
 
-3. System-Specific Questions:
-   - Cardiovascular (chest pain, palpitations, shortness of breath)
-   - Respiratory (cough, wheezing, breathing difficulties)
-   - Gastrointestinal (appetite, digestion, bowel habits)
-   - Musculoskeletal (joint pain, mobility issues)
-   - Neurological (headaches, dizziness, coordination)
+RESPIRATORY FUNCTION:
+- Breathing patterns and difficulties
+- Exercise tolerance
+- Coughing and wheezing
+- Smoking history and exposure
+- Environmental factors
+- Sleep breathing issues
+- Respiratory medication review
+- Impact on daily activities
 
-4. Lifestyle Analysis:
-   - Detailed exercise habits and physical activity
-   - Diet and nutrition patterns
-   - Sleep hygiene
-   - Stress management techniques
-   - Work-life balance
+FULL HEALTH SCREENING:
+- Comprehensive review of all systems
+- Detailed family history
+- Lifestyle assessment
+- Mental health evaluation
+- Preventive care discussion
+- Current medications review
+- Risk factor analysis
+- Future health planning
 
-Final Assessment:
-- Compile all gathered information
-- Provide a comprehensive health evaluation
-- List potential risk factors
-- Offer specific recommendations
-- Generate two reports:
+Patient Profile:
+- Height: ${preAssessmentData.height}cm
+- Weight: ${preAssessmentData.weight}kg
+- BMI: ${(
+          preAssessmentData.weight / Math.pow(preAssessmentData.height / 100, 2)
+        ).toFixed(1)}
+- Smoking Status: ${preAssessmentData.smoker ? "Smoker" : "Non-smoker"}
+- Exercise Frequency: ${preAssessmentData.exerciseFrequency}
+
+Communication Guidelines:
+- Keep responses concise and conversational
+- Use clear, non-technical language
+- Show empathy while maintaining professionalism
+- Focus questions based on assessment type
+- Respect time limits for each assessment type
+- Provide clear explanations for medical terms
+- Address immediate concerns within scope
+- Stay focused on relevant systems for specific assessments
+
+Report Generation:
+When assessment is complete, generate two reports:
 
 1. Patient Report:
-   - Overall health status
-   - Key findings and concerns
-   - Lifestyle recommendations
-   - Suggested follow-up actions
+- Summary of findings
+- Key health indicators
+- Specific recommendations
+- Follow-up suggestions
+- Lifestyle modifications
 
 2. Underwriting Report:
-   - Risk assessment summary
-   - Key medical findings
-   - Lifestyle risk factors
-   - Insurance implications
-   - Risk classification recommendation
+- Risk assessment summary
+- Key medical findings
+- Insurance-relevant factors
+- HIPAA-compliant documentation
+- Risk classification recommendation
 
-Communication Style:
-- Maintain professional yet approachable tone
-- Ask one category of questions at a time
-- Wait for patient response before proceeding
-- Provide clear, concise explanations
-- Use medical terminology with lay explanations
-- Show empathy while maintaining professional boundaries
-- Keep responses conversational and natural for speech.
-- Avoid using any special characters or formatting (no bullet points, numbers, or symbols).
-- Break complex information into short, clear sentences.
-- Keep responses concise, aiming for a maximum of 2-3 sentences.
-- Avoid line breaks and unnecessary pauses in conversation.
-- Use natural transitions between topics.
-- Focus on providing direct answers to questions without excessive detail.
-- Avoid mentioning specific data formats or technical terms unless necessary.
-- Don't use line breaks or paragraph formatting.
-
-Remember to:
+Important Instructions:
+- Maintain HIPAA compliance throughout
+- Stay within designated time limits
+- Focus on insurance-relevant factors
 - Document all responses systematically
-- Flag any concerning symptoms or combinations
-- Consider interactions between different health factors
-- Provide evidence-based recommendations
-- Maintain focus on both immediate and long-term health implications
+- When you determine it's time to generate reports, end your last spoken message with a \b tag
+- Do not mention the \b tag in speech - it's only used as a signal
 
-Important: When you determine it's time to generate the final reports, end your last spoken message with a \r tag. 
-For example: "Thank you for completing this health assessment. I'll generate your reports now.\r"
-
-Do not mention the \r tag in speech - it's only used as a signal to generate reports.
-`,
+Initial Greeting:
+Start with a professional greeting, introduce the specific type of assessment, and explain the expected duration and process.`,
+        language: preAssessmentData.language,
       });
 
       await newAvatar.startVoiceChat({
@@ -549,12 +634,11 @@ Do not mention the \r tag in speech - it's only used as a signal to generate rep
       });
 
       // Initial greeting
-      await newAvatar.speak({ 
-        text: "Hello! I'm here to conduct your health assessment. How are you feeling today?",
+      await newAvatar.speak({
+        text: "Hello! Introduce yourself as Medstra, I'm here to conduct your health assessment. How are you feeling today?",
         taskType: TaskType.TALK,
-        taskMode: TaskMode.SYNC 
+        taskMode: TaskMode.SYNC,
       });
-
     } catch (error) {
       console.error("Error starting session:", error);
     } finally {
@@ -601,10 +685,10 @@ Do not mention the \r tag in speech - it's only used as a signal to generate rep
       <div className="flex flex-col">
         <div className="relative aspect-video bg-muted">
           {stream && (
-            <video 
-              ref={mediaStream} 
-              autoPlay 
-              playsInline 
+            <video
+              ref={mediaStream}
+              autoPlay
+              playsInline
               className="w-full h-full object-cover"
             />
           )}
@@ -626,7 +710,11 @@ Do not mention the \r tag in speech - it's only used as a signal to generate rep
                 Start Session
               </Button>
             ) : (
-              <Button onClick={endSession} variant="destructive" className="w-full">
+              <Button
+                onClick={endSession}
+                variant="destructive"
+                className="w-full"
+              >
                 End Session
               </Button>
             )}
@@ -674,23 +762,22 @@ Do not mention the \r tag in speech - it's only used as a signal to generate rep
   );
 }
 
-
 export interface StreamingAvatarApiConfig {
   token: string;
   basePath?: string;
 }
 
 export enum AvatarQuality {
-  Low = 'low',
-  Medium = 'medium',
-  High = 'high',
+  Low = "low",
+  Medium = "medium",
+  High = "high",
 }
 export enum VoiceEmotion {
-  EXCITED = 'excited',
-  SERIOUS = 'serious',
-  FRIENDLY = 'friendly',
-  SOOTHING = 'soothing',
-  BROADCASTER = 'broadcaster',
+  EXCITED = "excited",
+  SERIOUS = "serious",
+  FRIENDLY = "friendly",
+  SOOTHING = "soothing",
+  BROADCASTER = "broadcaster",
 }
 export interface ElevenLabsSettings {
   stability?: number;
@@ -702,7 +789,7 @@ export interface StartAvatarRequest {
   quality?: AvatarQuality;
   avatarName: string;
   voice?: {
-    voiceId?: string
+    voiceId?: string;
     rate?: number;
     emotion?: VoiceEmotion;
     elevenlabsSettings?: ElevenLabsSettings;
@@ -714,20 +801,20 @@ export interface StartAvatarRequest {
 }
 
 export interface StartAvatarResponse {
-  session_id: string,
-  access_token: string,
-  url: string,
-  is_paid: boolean,
-  session_duration_limit: number
+  session_id: string;
+  access_token: string;
+  url: string;
+  is_paid: boolean;
+  session_duration_limit: number;
 }
 
 export enum TaskType {
-  TALK = 'talk',
-  REPEAT = 'repeat',
+  TALK = "talk",
+  REPEAT = "repeat",
 }
 export enum TaskMode {
-  SYNC = 'sync',
-  ASYNC = 'async',
+  SYNC = "sync",
+  ASYNC = "async",
 }
 export interface SpeakRequest {
   text: string;
@@ -742,17 +829,17 @@ export interface CommonRequest {
 
 // event types --------------------------------
 export enum StreamingEvents {
-  AVATAR_START_TALKING = 'avatar_start_talking',
-  AVATAR_STOP_TALKING = 'avatar_stop_talking',
-  AVATAR_TALKING_MESSAGE = 'avatar_talking_message',
-  AVATAR_END_MESSAGE = 'avatar_end_message',
-  USER_TALKING_MESSAGE = 'user_talking_message',
-  USER_END_MESSAGE = 'user_end_message',
-  USER_START = 'user_start',
-  USER_STOP = 'user_stop',
-  USER_SILENCE = 'user_silence',
-  STREAM_READY = 'stream_ready',
-  STREAM_DISCONNECTED = 'stream_disconnected',
+  AVATAR_START_TALKING = "avatar_start_talking",
+  AVATAR_STOP_TALKING = "avatar_stop_talking",
+  AVATAR_TALKING_MESSAGE = "avatar_talking_message",
+  AVATAR_END_MESSAGE = "avatar_end_message",
+  USER_TALKING_MESSAGE = "user_talking_message",
+  USER_END_MESSAGE = "user_end_message",
+  USER_START = "user_start",
+  USER_STOP = "user_stop",
+  USER_SILENCE = "user_silence",
+  STREAM_READY = "stream_ready",
+  STREAM_DISCONNECTED = "stream_disconnected",
 }
 export type EventHandler = (...args: any[]) => void;
 export interface EventData {
@@ -809,7 +896,10 @@ interface UserSilenceEvent extends WebsocketBaseEvent {
   count_down: number;
 }
 
-type StreamingWebSocketEventTypes = UserStartTalkingEvent | UserStopTalkingEvent | UserSilenceEvent;
+type StreamingWebSocketEventTypes =
+  | UserStartTalkingEvent
+  | UserStopTalkingEvent
+  | UserSilenceEvent;
 
 class APIError extends Error {
   public status: number;
@@ -817,7 +907,7 @@ class APIError extends Error {
 
   constructor(message: string, status: number, responseText: string) {
     super(message);
-    this.name = 'APIError';
+    this.name = "APIError";
     this.status = status;
     this.responseText = responseText;
   }
@@ -847,7 +937,9 @@ class StreamingAvatar {
     this.basePath = basePath;
   }
 
-  public async createStartAvatar(requestData: StartAvatarRequest): Promise<any> {
+  public async createStartAvatar(
+    requestData: StartAvatarRequest
+  ): Promise<any> {
     const sessionInfo = await this.newSession(requestData);
     this.sessionId = sessionInfo.session_id;
     this.language = requestData.language;
@@ -862,7 +954,7 @@ class StreamingAvatar {
         autoGainControl: true,
         echoCancellation: true,
         noiseSuppression: true,
-      }
+      },
     });
 
     this.room = room;
@@ -872,7 +964,7 @@ class StreamingAvatar {
       let eventMsg: StreamingEventTypes | null = null;
       try {
         const messageString = new TextDecoder().decode(
-          roomMessage as unknown as ArrayBuffer,
+          roomMessage as unknown as ArrayBuffer
         );
         eventMsg = JSON.parse(messageString) as StreamingEventTypes;
       } catch (e) {
@@ -891,11 +983,7 @@ class StreamingAvatar {
 
         const hasVideoTrack = mediaStream.getVideoTracks().length > 0;
         const hasAudioTrack = mediaStream.getAudioTracks().length > 0;
-        if (
-          hasVideoTrack &&
-          hasAudioTrack &&
-          !this.mediaStream
-        ) {
+        if (hasVideoTrack && hasAudioTrack && !this.mediaStream) {
           this.mediaStream = mediaStream;
           this.emit(StreamingEvents.STREAM_READY, this.mediaStream);
         }
@@ -923,7 +1011,9 @@ class StreamingAvatar {
     return sessionInfo;
   }
 
-  public async startVoiceChat (requestData: { useSilencePrompt?: boolean } = {}) {
+  public async startVoiceChat(
+    requestData: { useSilencePrompt?: boolean } = {}
+  ) {
     requestData.useSilencePrompt = requestData.useSilencePrompt || false;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return;
@@ -931,10 +1021,12 @@ class StreamingAvatar {
 
     try {
       await this.loadAudioRawFrame();
-      await this.connectWebSocket({ useSilencePrompt: requestData.useSilencePrompt });
+      await this.connectWebSocket({
+        useSilencePrompt: requestData.useSilencePrompt,
+      });
 
       this.audioContext = new window.AudioContext({
-        latencyHint: 'interactive',
+        latencyHint: "interactive",
         sampleRate: 16000,
       });
       const devicesStream = await navigator.mediaDevices.getUserMedia({
@@ -948,8 +1040,13 @@ class StreamingAvatar {
       });
       this.mediaDevicesStream = devicesStream;
 
-      this.mediaStreamAudioSource = this.audioContext?.createMediaStreamSource(devicesStream);
-      this.scriptProcessor = this.audioContext?.createScriptProcessor(512, 1, 1);
+      this.mediaStreamAudioSource =
+        this.audioContext?.createMediaStreamSource(devicesStream);
+      this.scriptProcessor = this.audioContext?.createScriptProcessor(
+        512,
+        1,
+        1
+      );
 
       this.mediaStreamAudioSource.connect(this.scriptProcessor);
       this.scriptProcessor.connect(this.audioContext?.destination);
@@ -968,7 +1065,11 @@ class StreamingAvatar {
             numChannels: 1,
           },
         });
-        const encodedFrame = new Uint8Array(this.audioRawFrame?.encode(frame as unknown as protobuf.Message).finish() as unknown as ArrayBuffer);
+        const encodedFrame = new Uint8Array(
+          this.audioRawFrame
+            ?.encode(frame as unknown as protobuf.Message)
+            .finish() as unknown as ArrayBuffer
+        );
         this.webSocket?.send(encodedFrame);
       };
 
@@ -979,7 +1080,7 @@ class StreamingAvatar {
       throw e;
     }
   }
-  public closeVoiceChat () {
+  public closeVoiceChat() {
     try {
       if (this.audioContext) {
         this.audioContext = null;
@@ -1003,7 +1104,7 @@ class StreamingAvatar {
   }
 
   public async newSession(
-    requestData: StartAvatarRequest,
+    requestData: StartAvatarRequest
   ): Promise<StartAvatarResponse> {
     return this.request("/v1/streaming.new", {
       avatar_name: requestData.avatarName,
@@ -1019,7 +1120,7 @@ class StreamingAvatar {
       language: requestData.language,
       version: "v2",
       video_encoding: "H264",
-      source: 'sdk',
+      source: "sdk",
       disable_idle_timeout: requestData.disableIdleTimeout,
     });
   }
@@ -1029,18 +1130,26 @@ class StreamingAvatar {
     });
   }
   public async speak(requestData: SpeakRequest): Promise<any> {
-    requestData.taskType = requestData.taskType || requestData.task_type || TaskType.TALK;
+    requestData.taskType =
+      requestData.taskType || requestData.task_type || TaskType.TALK;
     requestData.taskMode = requestData.taskMode || TaskMode.ASYNC;
 
     // try to use websocket first
     // only support talk task
-    if (this.webSocket && this.audioRawFrame && requestData.task_type === TaskType.TALK && requestData.taskMode !== TaskMode.SYNC) {
+    if (
+      this.webSocket &&
+      this.audioRawFrame &&
+      requestData.task_type === TaskType.TALK &&
+      requestData.taskMode !== TaskMode.SYNC
+    ) {
       const frame = this.audioRawFrame?.create({
         text: {
           text: requestData.text,
         },
       });
-      const encodedFrame = new Uint8Array(this.audioRawFrame?.encode(frame).finish());
+      const encodedFrame = new Uint8Array(
+        this.audioRawFrame?.encode(frame).finish()
+      );
       this.webSocket?.send(encodedFrame);
       return;
     }
@@ -1086,7 +1195,11 @@ class StreamingAvatar {
     return this;
   }
 
-  private async request(path: string, params: CommonRequest, config?: any): Promise<any> {
+  private async request(
+    path: string,
+    params: CommonRequest,
+    config?: any
+  ): Promise<any> {
     try {
       const response = await fetch(this.getRequestUrl(path), {
         method: "POST",
@@ -1107,7 +1220,7 @@ class StreamingAvatar {
       }
 
       const jsonData = await response.json();
-      return jsonData.data
+      return jsonData.data;
     } catch (error) {
       throw error;
     }
@@ -1120,13 +1233,17 @@ class StreamingAvatar {
   private getRequestUrl(endpoint: string): string {
     return `${this.basePath}${endpoint}`;
   }
-  private async connectWebSocket (requestData: { useSilencePrompt: boolean }) {
-    let websocketUrl = `wss://${new URL(this.basePath).hostname}/v1/ws/streaming.chat?session_id=${this.sessionId}&session_token=${this.token}&silence_response=${requestData.useSilencePrompt}`;
+  private async connectWebSocket(requestData: { useSilencePrompt: boolean }) {
+    let websocketUrl = `wss://${
+      new URL(this.basePath).hostname
+    }/v1/ws/streaming.chat?session_id=${this.sessionId}&session_token=${
+      this.token
+    }&silence_response=${requestData.useSilencePrompt}`;
     if (this.language) {
       websocketUrl += `&stt_language=${this.language}`;
     }
     this.webSocket = new WebSocket(websocketUrl);
-    this.webSocket.addEventListener('message', (event) => {
+    this.webSocket.addEventListener("message", (event) => {
       let eventData: StreamingWebSocketEventTypes | null = null;
       try {
         eventData = JSON.parse(event.data);
@@ -1136,23 +1253,23 @@ class StreamingAvatar {
       }
       this.emit(eventData?.event_type!, eventData);
     });
-    this.webSocket.addEventListener('close', (event) => {
+    this.webSocket.addEventListener("close", (event) => {
       this.webSocket = null;
     });
     return new Promise((resolve, reject) => {
-      this.webSocket?.addEventListener('error', (event) => {
+      this.webSocket?.addEventListener("error", (event) => {
         this.webSocket = null;
         reject(event);
       });
-      this.webSocket?.addEventListener('open', () => {
+      this.webSocket?.addEventListener("open", () => {
         resolve(true);
       });
     });
   }
-  private async loadAudioRawFrame () {
+  private async loadAudioRawFrame() {
     if (!this.audioRawFrame) {
-      const root = protobuf.Root.fromJSON(jsonDescriptor );
-      this.audioRawFrame = root?.lookupType('pipecat.Frame');
+      const root = protobuf.Root.fromJSON(jsonDescriptor);
+      this.audioRawFrame = root?.lookupType("pipecat.Frame");
     }
   }
 }

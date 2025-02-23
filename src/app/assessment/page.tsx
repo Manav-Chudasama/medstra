@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FadeIn } from "@/components/animations/fade-in";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-
+import { Language } from "@/components/assessment/video/InteractiveAvatar";
 const steps = [
   {
     id: 1,
@@ -44,6 +44,7 @@ export default function AssessmentPage() {
   const [weight, setWeight] = useState("");
   const [smoker, setSmoker] = useState("no");
   const [exerciseFrequency, setExerciseFrequency] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(Language.English);
 
   useEffect(() => {
     // If no assessment type is selected, redirect to select page
@@ -90,12 +91,16 @@ export default function AssessmentPage() {
                     exerciseFrequency
                   }}
                   assessmentType={assessmentType}
+                  selectedLanguage={selectedLanguage}
                 />
               ) : (
                 <Card className="overflow-hidden">
                   <CardContent className="p-6">
                     {currentStep === 1 && (
-                      <ConsentForm onNext={() => setCurrentStep(2)} />
+                      <ConsentForm onNext={(language) => {
+                        setCurrentStep(2);
+                        setSelectedLanguage(language);
+                      }} />
                     )}
                     {currentStep === 2 && (
                       <PreAssessment

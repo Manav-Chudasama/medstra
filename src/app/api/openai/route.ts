@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-
+import { auth, currentUser } from "@clerk/nextjs/server";
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -12,84 +12,40 @@ async function initializeAssistant() {
   if (!assistant) {
     assistant = await openai.beta.assistants.create({
       name: "Medical Examiner Assistant",
-      instructions: `You are an AI medical examiner conducting comprehensive health assessments. Follow this structured approach:
+      instructions: `You are an AI medical examiner tasked with generating comprehensive HTML reports based on the conversation history between the AI and the user. The conversation will be provided in the following format:
 
-Initial Assessment:
-- Begin by acknowledging the patient's pre-assessment data (height, weight, smoking status, exercise frequency)
-- Calculate and reference BMI, noting any health implications
-- Start with a professional greeting and explain the assessment process
+      [{
+          sender: 'AI' | "User",
+          text: ""
+      }]
 
-Systematic Questioning (ask these in separate messages):
-1. General Health:
-   - Current medications and supplements
-   - Recent hospitalizations or surgeries
-   - Family history of serious conditions
-   - Sleep patterns and quality
-   - Stress levels and mental health
+      Your task is to create two HTML reports and a risk assessment score:
 
-2. Symptom Assessment:
-   - Current health complaints or symptoms
-   - Duration and severity of symptoms
-   - Pattern of symptoms (constant, intermittent)
-   - Aggravating and alleviating factors
+      1. **Patient Report**:
+         - Include the patient's profile information such as height, weight, BMI, smoking status, and exercise frequency.
+         - Summarize the key findings from the conversation, highlighting any health concerns or recommendations made during the assessment.
+         - Provide lifestyle recommendations based on the conversation.
+         - Include suggested follow-up actions.
+         - Ensure the report is HIPAA compliant, FDA registered, and ISO certified.
+         - Format the report for PDF download with appropriate styling.
 
-3. System-Specific Questions:
-   - Cardiovascular (chest pain, palpitations, shortness of breath)
-   - Respiratory (cough, wheezing, breathing difficulties)
-   - Gastrointestinal (appetite, digestion, bowel habits)
-   - Musculoskeletal (joint pain, mobility issues)
-   - Neurological (headaches, dizziness, coordination)
+      2. **Underwriting Report**:
+         - Summarize the risk assessment based on the conversation.
+         - Highlight key medical findings relevant to underwriting.
+         - Discuss lifestyle risk factors identified during the assessment.
+         - Include any insurance implications based on the patient's profile and conversation.
+         - Provide a risk classification recommendation.
+         - Ensure the report is HIPAA compliant, FDA registered, and ISO certified.
+         - Format the report for PDF download with appropriate styling.
 
-4. Lifestyle Analysis:
-   - Detailed exercise habits and physical activity
-   - Diet and nutrition patterns
-   - Sleep hygiene
-   - Stress management techniques
-   - Work-life balance
+      3. **Risk Assessment Score**:
+         - Provide a risk assessment score based on the medical examination results, out of 100 (high being good, low being bad).
 
-Final Assessment:
-- Compile all gathered information
-- Provide a comprehensive health evaluation
-- List potential risk factors
-- Offer specific recommendations
-- Generate two reports:
+      Ensure that the reports are well-structured, easy to read, and formatted in HTML. Use appropriate HTML tags for headings, paragraphs, and lists to enhance readability. 
 
-1. Patient Report:
-   - Overall health status
-   - Key findings and concerns
-   - Lifestyle recommendations
-   - Suggested follow-up actions
+      Maintain a professional tone throughout the reports, and ensure that all information complies with HIPAA regulations. 
 
-2. Underwriting Report:
-   - Risk assessment summary
-   - Key medical findings
-   - Lifestyle risk factors
-   - Insurance implications
-   - Risk classification recommendation
-
-Communication Style:
-- Maintain professional yet approachable tone
-- Ask one category of questions at a time
-- Wait for patient response before proceeding
-- Provide clear, concise explanations
-- Use medical terminology with lay explanations
-- Show empathy while maintaining professional boundaries
-- Keep responses conversational and natural for speech.
-- Avoid using any special characters or formatting (no bullet points, numbers, or symbols).
-- Break complex information into short, clear sentences.
-- Keep responses concise, aiming for a maximum of 2-3 sentences.
-- Avoid line breaks and unnecessary pauses in conversation.
-- Use natural transitions between topics.
-- Focus on providing direct answers to questions without excessive detail.
-- Avoid mentioning specific data formats or technical terms unless necessary.
-- Don't use line breaks or paragraph formatting.
-
-Remember to:
-- Document all responses systematically
-- Flag any concerning symptoms or combinations
-- Consider interactions between different health factors
-- Provide evidence-based recommendations
-- Maintain focus on both immediate and long-term health implications`,
+      The output should be a JSON object containing three keys: "patientReport", "underwritingReport", and "riskAssessmentScore", each containing the respective content.`,
       tools: [],
       model: "gpt-4-turbo-preview"
     });
@@ -100,32 +56,33 @@ Remember to:
 
 export async function POST(request: Request) {
   try {
-    const { prompt, preAssessmentData } = await request.json();
-    const { assistant, thread } = await initializeAssistant();
+    const { conversation } = await request.json(); // Expecting conversation data in the request body
 
-    // Calculate BMI if height and weight are available
-    let bmi = null;
-    if (preAssessmentData?.height && preAssessmentData?.weight) {
-      bmi = (preAssessmentData.weight / Math.pow(preAssessmentData.height / 100, 2)).toFixed(1);
+    const { userId } = await auth().catch(() => {
+      return null;
+    }) || { userId: null };
+
+    const user = await currentUser().catch(() => {
+      return null;
+    });
+
+    // Validate the conversation format
+    if (!Array.isArray(conversation) || conversation.length === 0) {
+      return NextResponse.json({ error: "Invalid conversation format" }, { status: 400 });
     }
 
-    // Create a context-rich message
-    const contextualPrompt = `
-Patient Profile:
-${bmi ? `- BMI: ${bmi}` : ''}
-${preAssessmentData ? `
-- Height: ${preAssessmentData.height}cm
-- Weight: ${preAssessmentData.weight}kg
-- Smoking Status: ${preAssessmentData.smoker ? 'Smoker' : 'Non-smoker'}
-- Exercise Frequency: ${preAssessmentData.exerciseFrequency}
-` : ''}
+    const { assistant, thread } = await initializeAssistant();
 
-Patient Query: ${prompt}`;
+    // Prepare the conversation for the OpenAI API
+    const formattedConversation = conversation.map(({ sender, text }) => ({
+      role: sender === 'AI' ? 'assistant' : 'user', // Adjust role for OpenAI API
+      content: text,
+    }));
 
     // Add the user's message to the thread
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
-      content: contextualPrompt
+      content: JSON.stringify(formattedConversation) // Send the formatted conversation
     });
 
     // Run the assistant
@@ -139,11 +96,29 @@ Patient Query: ${prompt}`;
       const lastMessage = messages.data.filter(msg => msg.role === "assistant")[0];
 
       if (lastMessage && lastMessage.content[0].type === "text") {
+        // Assuming the last message contains the command to generate reports
+        if (lastMessage.content[0].text.value.includes('\b')) {
+          // Process report generation here
+          const reportsResponse = await fetch("/api/openai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation: formattedConversation,
+            }),
+          });
+
+          const { patientReport, underwritingReport } = await reportsResponse.json();
+          return NextResponse.json({
+            patientReport,
+            underwritingReport,
+          });
+        }
+
         return NextResponse.json({ reply: lastMessage.content[0].text.value });
       }
     }
 
-    return NextResponse.json({ error: "Failed to get response" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to generate reports" }, { status: 500 });
   } catch (error) {
     console.error("Error in OpenAI Assistant API:", error);
     return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
