@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import protobuf from "protobufjs";
 import { Room, RoomEvent, VideoPresets } from "livekit-client";
+import { Input } from "@/components/ui/input";
 
 const jsonDescriptor = {
   options: {
@@ -408,7 +409,13 @@ export default function InteractiveAvatar({
   const [acceptMessages, setAcceptMessages] = useState(true);
   const [message, setMessage] = useState<string>("");
 
-  const [messages, setMessages] = useState<string[]>([]);
+  // Update the type definition for messageStream
+  type Message = {
+    sender: string;
+    text: string | JSX.Element; // Allow text to be either a string or a JSX element
+  };
+
+  const [messageStream, setMessageStream] = useState<Message[]>([]);
 
   async function fetchAccessToken() {
     const response = await fetch("/api/get-access-token", { method: "POST" });
@@ -453,6 +460,8 @@ export default function InteractiveAvatar({
           sender: "AI",
           text: currentMessage,
         });
+
+        setMessageStream((prev) => [...prev, { sender: "AI", text: currentMessage }]);
 
         // Check if the message contains the report generation tag
         if (
@@ -515,6 +524,11 @@ export default function InteractiveAvatar({
           sender: "User",
           text: event.detail.message,
         });
+
+        setMessageStream((prev) => [
+          ...prev,
+          { sender: "User", text: event.detail.message },
+        ]);
       });
 
       // Handle when the user starts speaking
@@ -680,6 +694,70 @@ Start with a professional greeting, introduce the specific type of assessment, a
     }
   }, [stream]);
 
+  const handleSendMessage = async () => {
+    if (!message) return;
+
+    // Add user message to the chat
+    setMessageStream((prev) => [...prev, { sender: "User", text: message }]);
+
+    // Send the message to the AI
+    await avatar?.speak({
+      text: message,
+      taskType: TaskType.TALK,
+      taskMode: TaskMode.SYNC,
+    });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSendMessage();
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !avatar) return;
+
+    // Convert image to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onloadend = async () => {
+      const base64Image = reader.result as string;
+
+      // Send image to OpenAI for analysis
+      const response = await fetch("/api/openai/analyze-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Image }),
+      });
+
+      const { analysis } = await response.json();
+
+      // Add the image analysis to chat
+      setMessageStream((prev) => [
+        ...prev, 
+        { sender: "User", text: "Uploaded an image" },
+        
+        {
+          sender: "User",
+          text: (
+            <div>
+              <img src={base64Image} alt="Uploaded" style={{ width: '100px', height: 'auto' }} />
+            </div>
+          ),
+        },
+      ]);
+
+      // Send the analysis to avatar
+      await avatar.speak({
+        text: `IMPORTANT: The user uploaded an image. Please analyze the image in detail it is an medical emergency related image. ${analysis}`,
+        taskType: TaskType.TALK,
+        taskMode: TaskMode.SYNC,
+      });
+    };
+  };
+
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-col">
@@ -719,44 +797,50 @@ Start with a professional greeting, introduce the specific type of assessment, a
               </Button>
             )}
           </div>
-
-          {/* {avatar && (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type your message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isAvatarTalking}
-                className="flex-1"
-              />
-              <Button 
-                onClick={() => handleSpeak(message)}
-                disabled={!message || isAvatarTalking}
-              >
-                Send
-              </Button>
-              <Button
-                onClick={toggleRecording}
-                disabled={isAvatarTalking}
-              >
-                {isRecording ? <MicOff /> : <Mic />}
-              </Button>
-            </div>
-          )} */}
         </div>
 
-        {/* Chat UI Section
         <div className="mt-4 p-4 border-t border-gray-300">
           <h3 className="text-lg font-semibold">Chat</h3>
           <div className="overflow-y-auto max-h-60 border rounded-lg p-2">
-            {messages.map((msg, index) => (
-              <div key={index} className={`text-sm ${msg.sender === "AI" ? "text-gray-700" : "text-blue-600"}`}>
-                <strong>{msg.sender}: </strong>{msg.text}
+            {messageStream.map((msg, index) => (
+              <div
+                key={index}
+                className={`text-sm ${
+                  msg.sender === "AI" ? "text-gray-700" : "text-blue-600"
+                }`}
+              >
+                <strong>{msg.sender}: </strong>
+                {msg.text}
               </div>
             ))}
           </div>
-        </div> */}
+
+          <div className="flex gap-2 mt-4">
+            <Input
+              placeholder="Type your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="flex-1"
+            />
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              id="image-upload"
+            />
+            <Button
+              onClick={() => document.getElementById("image-upload")?.click()}
+              variant="outline"
+            >
+              Upload Image
+            </Button>
+            <Button onClick={() => handleSendMessage()} disabled={!message}>
+              Send
+            </Button>
+          </div>
+        </div>
       </div>
     </Card>
   );
