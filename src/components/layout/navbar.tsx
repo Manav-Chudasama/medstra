@@ -29,7 +29,7 @@ const userNavigation = [
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const { openSignIn, openSignUp } = useClerk();
 
   const defaultOptions = {
@@ -38,6 +38,8 @@ export function Navbar() {
   };
 
   const { View } = useLottie(defaultOptions);
+
+  console.log('User ID:', userId);
 
   // Show loading state
   if (!isLoaded) {
