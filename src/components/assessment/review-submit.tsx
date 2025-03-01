@@ -6,14 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Check, AlertTriangle } from "lucide-react";
+import { Check, AlertTriangle, Link } from "lucide-react";
 
 interface ReviewSubmitProps {
   onBack: () => void;
   onSubmit: () => void;
 }
 
-export function ReviewSubmit({ onBack, onSubmit }: ReviewSubmitProps) {
+export function ReviewSubmit({ onBack }: ReviewSubmitProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -41,11 +41,15 @@ export function ReviewSubmit({ onBack, onSubmit }: ReviewSubmitProps) {
                 <dd className="text-sm font-medium">70 kg</dd>
               </div>
               <div>
-                <dt className="text-sm text-muted-foreground">Smoking Status</dt>
+                <dt className="text-sm text-muted-foreground">
+                  Smoking Status
+                </dt>
                 <dd className="text-sm font-medium">Non-smoker</dd>
               </div>
               <div>
-                <dt className="text-sm text-muted-foreground">Exercise Frequency</dt>
+                <dt className="text-sm text-muted-foreground">
+                  Exercise Frequency
+                </dt>
                 <dd className="text-sm font-medium">2-3 times a week</dd>
               </div>
             </dl>
@@ -62,7 +66,9 @@ export function ReviewSubmit({ onBack, onSubmit }: ReviewSubmitProps) {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
-                <span className="text-sm">Cardiovascular Assessment Complete</span>
+                <span className="text-sm">
+                  Cardiovascular Assessment Complete
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
@@ -70,7 +76,9 @@ export function ReviewSubmit({ onBack, onSubmit }: ReviewSubmitProps) {
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                <span className="text-sm">Additional blood pressure check recommended</span>
+                <span className="text-sm">
+                  Additional blood pressure check recommended
+                </span>
               </div>
             </div>
           </CardContent>
@@ -80,9 +88,10 @@ export function ReviewSubmit({ onBack, onSubmit }: ReviewSubmitProps) {
         <Card className="bg-muted/50">
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">
-              By submitting this assessment, you confirm that all provided information
-              is accurate to the best of your knowledge. The results will be shared
-              with your insurance provider for underwriting purposes.
+              By submitting this assessment, you confirm that all provided
+              information is accurate to the best of your knowledge. The results
+              will be shared with your insurance provider for underwriting
+              purposes.
             </p>
           </CardContent>
         </Card>
@@ -92,10 +101,11 @@ export function ReviewSubmit({ onBack, onSubmit }: ReviewSubmitProps) {
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button onClick={onSubmit}>
+        <Button>
+          {/* <Link href="/report">Submit Assessment</Link> */}
           Submit Assessment
         </Button>
       </div>
     </div>
   );
-} 
+}

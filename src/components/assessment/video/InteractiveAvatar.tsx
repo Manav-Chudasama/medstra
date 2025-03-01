@@ -463,7 +463,10 @@ export default function InteractiveAvatar({
           text: currentMessage,
         });
 
-        setMessageStream((prev) => [...prev, { sender: "AI", text: currentMessage }]);
+        setMessageStream((prev) => [
+          ...prev,
+          { sender: "AI", text: currentMessage },
+        ]);
 
         // Check if the message contains the report generation tag
         if (
@@ -484,7 +487,7 @@ export default function InteractiveAvatar({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               conversation: messages,
-              userId: user?.id
+              userId: user?.id,
             }),
           });
 
@@ -699,7 +702,7 @@ Start with a professional greeting, introduce the specific type of assessment, a
 
   const handleSendMessage = async () => {
     if (!message) return;
-
+    setMessage("");
     // Add user message to the chat
     setMessageStream((prev) => [...prev, { sender: "User", text: message }]);
 
@@ -724,7 +727,7 @@ Start with a professional greeting, introduce the specific type of assessment, a
     // Convert image to base64
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    
+
     reader.onloadend = async () => {
       const base64Image = reader.result as string;
 
@@ -739,14 +742,18 @@ Start with a professional greeting, introduce the specific type of assessment, a
 
       // Add the image analysis to chat
       setMessageStream((prev) => [
-        ...prev, 
+        ...prev,
         { sender: "User", text: "Uploaded an image" },
-        
+
         {
           sender: "User",
           text: (
             <div>
-              <img src={base64Image} alt="Uploaded" style={{ width: '100px', height: 'auto' }} />
+              <img
+                src={base64Image}
+                alt="Uploaded"
+                style={{ width: "100px", height: "auto" }}
+              />
             </div>
           ),
         },
