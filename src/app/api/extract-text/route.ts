@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createWorker } from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
+import { PDFDocumentProxy } from 'pdfjs-dist';
 import mammoth from 'mammoth';
+
+// Configure the worker source
+if (typeof window === 'undefined') {
+  const pdfjsWorker = require('pdfjs-dist/build/pdf.worker.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+}
 
 export async function POST(request: Request) {
   try {
@@ -18,14 +25,24 @@ export async function POST(request: Request) {
 
     // Handle different file types
     if (fileType === 'application/pdf') {
-      // Process PDF
-      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-      const numPages = pdf.numPages;
-      
-      for (let i = 1; i <= numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map((item: any) => item.str).join(' ') + '\n';
+      try {
+        // Load the PDF document
+        const loadingTask = pdfjsLib.getDocument(new Uint8Array(buffer));
+        const pdf: PDFDocumentProxy = await loadingTask.promise;
+        const numPages = pdf.numPages;
+        
+        // Extract text from each page
+        for (let i = 1; i <= numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items
+            .map((item: any) => item.str)
+            .join(' ');
+          text += pageText + '\n\nPage ' + i + '\n-------------------\n';
+        }
+      } catch (pdfError) {
+        console.error('PDF processing error:', pdfError);
+        throw new Error('Failed to process PDF document');
       }
     } else if (fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       // Process Word documents
@@ -36,15 +53,20 @@ export async function POST(request: Request) {
       text = new TextDecoder().decode(buffer);
     } else if (fileType.startsWith('image/')) {
       // Process images using OCR
-      const worker = await createWorker();
-      
-      // Convert the buffer to base64
-      const base64Data = Buffer.from(buffer).toString('base64');
-      const imageData = `data:${fileType};base64,${base64Data}`;
-      
-      const { data: { text: extractedText } } = await worker.recognize(imageData);
-      await worker.terminate();
-      text = extractedText;
+      try {
+        const worker = await createWorker();
+        
+        // Convert the buffer to base64
+        const base64Data = Buffer.from(buffer).toString('base64');
+        const imageData = `data:${fileType};base64,${base64Data}`;
+        
+        const { data: { text: extractedText } } = await worker.recognize(imageData);
+        await worker.terminate();
+        text = extractedText;
+      } catch (ocrError) {
+        console.error('OCR processing error:', ocrError);
+        throw new Error('Failed to process image document');
+      }
     } else {
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
@@ -68,6 +90,8 @@ Note: This medical report has been automatically processed and added to your ass
     return NextResponse.json({ text: formattedText });
   } catch (error) {
     console.error('Error processing file:', error);
-    return NextResponse.json({ error: 'Error processing file' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Error processing file'
+    }, { status: 500 });
   }
 } 
