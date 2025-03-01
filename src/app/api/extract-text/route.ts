@@ -7,6 +7,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const language = formData.get('language') as string || 'eng'; // Default to English if not specified
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -19,42 +20,56 @@ export async function POST(request: Request) {
     // Handle different file types
     if (fileType === 'application/pdf') {
       try {
-        // Convert ArrayBuffer to Buffer for pdf-parse
         const pdfBuffer = Buffer.from(buffer);
-        
-        // Parse PDF
         const data = await pdf(pdfBuffer);
+        
         text = data.text;
 
         if (!text.trim()) {
           throw new Error('No text could be extracted from the PDF');
         }
 
-        // Add page breaks for better readability
-        text = text.split('\n').join('\n\n');
+        // Improve formatting with proper page breaks and section markers
+        text = text
+          .split('\n')
+          .filter(line => line.trim()) // Remove empty lines
+          .join('\n\n');
       } catch (pdfError) {
         console.error('PDF processing error:', pdfError);
         throw new Error(pdfError instanceof Error ? pdfError.message : 'Failed to process PDF document');
       }
     } else if (fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      // Process Word documents
       const result = await mammoth.extractRawText({ arrayBuffer: buffer });
       text = result.value;
     } else if (fileType === 'text/plain') {
-      // Process text files
       text = new TextDecoder().decode(buffer);
     } else if (fileType.startsWith('image/')) {
-      // Process images using OCR
       try {
-        const worker = await createWorker();
+        // Initialize worker with language support
+        const worker = await createWorker(language);
         
-        // Convert the buffer to base64
+        // Convert buffer to base64
         const base64Data = Buffer.from(buffer).toString('base64');
         const imageData = `data:${fileType};base64,${base64Data}`;
         
-        const { data: { text: extractedText } } = await worker.recognize(imageData);
+        // Configure worker for better accuracy
+        await worker.setParameters({
+          tessedit_ocr_engine_mode: 1, // Legacy + LSTM mode
+          preserve_interword_spaces: '1',
+        });
+
+        // Perform OCR
+        const { data } = await worker.recognize(imageData);
+
+        text = data.text;
+
+        // Post-process OCR text
+        text = text
+          .replace(/[^\S\r\n]+/g, ' ') // Replace multiple spaces with single space
+          .replace(/[\r\n]+/g, '\n\n') // Normalize line breaks
+          .trim();
+
         await worker.terminate();
-        text = extractedText;
       } catch (ocrError) {
         console.error('OCR processing error:', ocrError);
         throw new Error('Failed to process image document');
@@ -63,27 +78,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
 
-    // Format the extracted text in a structured way
+    // Format the extracted text with improved structure
     const formattedText = `
-Previous Medical Report Information:
---------------------------------
-Document Type: ${file.type}
-Document Name: ${file.name}
-Upload Date: ${new Date().toISOString()}
+Medical Report Analysis
+======================
+Document Information:
+-------------------
+Type: ${file.type}
+Name: ${file.name}
+Processed: ${new Date().toLocaleString()}
+${fileType.startsWith('image/') ? `OCR Language: ${language}` : ''}
 
-Report Content:
--------------
-${text}
+Content Analysis:
+---------------
+${text.trim()}
 
-Note: This medical report has been automatically processed and added to your assessment. The AI examiner will take this information into account during your assessment.
---------------------------------
+Processing Notes:
+---------------
+- Document has been automatically processed and analyzed
+- Text extraction method: ${fileType.startsWith('image/') ? 'OCR (Optical Character Recognition)' : 
+  fileType === 'application/pdf' ? 'PDF Text Extraction' :
+  fileType.includes('word') ? 'Word Document Processing' : 'Plain Text Processing'}
+- This report will be incorporated into your medical assessment
+======================
 `;
 
-    return NextResponse.json({ text: formattedText });
+    return NextResponse.json({ 
+      text: formattedText,
+      metadata: {
+        fileType,
+        fileName: file.name,
+        processedAt: new Date().toISOString(),
+        processingMethod: fileType.startsWith('image/') ? 'OCR' : 'Direct Text Extraction'
+      }
+    });
   } catch (error) {
     console.error('Error processing file:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Error processing file'
+      error: error instanceof Error ? error.message : 'Error processing file',
+      details: error instanceof Error ? error.stack : undefined
     }, { status: 500 });
   }
 } 
