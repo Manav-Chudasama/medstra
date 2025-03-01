@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createWorker } from 'tesseract.js';
 import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
-
-// Configure PDF.js for Node environment
-const pdfjsWorker = require('pdfjs-dist/legacy/build/pdf.worker.entry');
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+import pdf from 'pdf-parse';
 
 export async function POST(request: Request) {
   try {
@@ -23,37 +19,19 @@ export async function POST(request: Request) {
     // Handle different file types
     if (fileType === 'application/pdf') {
       try {
-        // Convert ArrayBuffer to Uint8Array
-        const uint8Array = new Uint8Array(buffer);
+        // Convert ArrayBuffer to Buffer for pdf-parse
+        const pdfBuffer = Buffer.from(buffer);
         
-        // Load the PDF document
-        const loadingTask = pdfjsLib.getDocument({
-          data: uint8Array,
-          verbosity: 0,
-          disableFontFace: true
-        });
-        
-        const pdf = await loadingTask.promise;
-        const numPages = pdf.numPages;
-        
-        // Extract text from each page
-        for (let i = 1; i <= numPages; i++) {
-          try {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            const pageText = content.items
-              .map((item: any) => item.str)
-              .join(' ');
-            text += `\n\nPage ${i}\n-------------------\n${pageText}`;
-          } catch (pageError) {
-            console.error(`Error processing page ${i}:`, pageError);
-            text += `\n\nPage ${i}\n-------------------\nError: Could not extract text from this page.`;
-          }
-        }
+        // Parse PDF
+        const data = await pdf(pdfBuffer);
+        text = data.text;
 
         if (!text.trim()) {
           throw new Error('No text could be extracted from the PDF');
         }
+
+        // Add page breaks for better readability
+        text = text.split('\n').join('\n\n');
       } catch (pdfError) {
         console.error('PDF processing error:', pdfError);
         throw new Error(pdfError instanceof Error ? pdfError.message : 'Failed to process PDF document');
