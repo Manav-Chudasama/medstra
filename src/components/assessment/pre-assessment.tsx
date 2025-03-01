@@ -10,10 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Upload } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PreAssessmentProps {
   onBack: () => void;
-  onNext: (data: { height: string; weight: string; smoker: string; exerciseFrequency: string }) => void;
+  onNext: (data: { 
+    height: string; 
+    weight: string; 
+    smoker: string; 
+    exerciseFrequency: string;
+    medicalReportText?: string;
+  }) => void;
 }
 
 export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
@@ -21,6 +29,48 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
   const [weight, setWeight] = useState("");
   const [smoker, setSmoker] = useState("no");
   const [exerciseFrequency, setExerciseFrequency] = useState("");
+  const [medicalReportText, setMedicalReportText] = useState<string>("");
+  const [uploadStatus, setUploadStatus] = useState<{
+    message: string;
+    type: "success" | "error" | "loading" | null;
+  }>({ message: "", type: null });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadStatus({ message: "Processing medical report...", type: "loading" });
+
+    // Create FormData object
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Extract text from document
+      const response = await fetch("/api/extract-text", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setMedicalReportText(data.text);
+      setUploadStatus({ 
+        message: "Medical report processed successfully!", 
+        type: "success" 
+      });
+    } catch (error) {
+      console.error("Error processing document:", error);
+      setUploadStatus({ 
+        message: "Error processing medical report. Please try again.", 
+        type: "error" 
+      });
+    }
+  };
 
   const handleContinue = () => {
     if (!height || !weight || !exerciseFrequency) {
@@ -28,7 +78,13 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
       return;
     }
     // Proceed to the next step with the collected data
-    onNext({ height, weight, smoker, exerciseFrequency });
+    onNext({ 
+      height, 
+      weight, 
+      smoker, 
+      exerciseFrequency,
+      medicalReportText 
+    });
   };
 
   return (
@@ -92,6 +148,41 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
               <SelectItem value="never">Never</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Medical Reports (Optional)</Label>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="medical-report"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => document.getElementById("medical-report")?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Medical Report
+              </Button>
+            </div>
+            {uploadStatus.type && (
+              <Alert>
+                <AlertDescription className={
+                  uploadStatus.type === "success" ? "text-green-600" :
+                  uploadStatus.type === "error" ? "text-red-600" :
+                  "text-orange-600"
+                }>
+                  {uploadStatus.message}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         </div>
       </div>
 
