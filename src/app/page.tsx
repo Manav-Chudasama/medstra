@@ -154,14 +154,14 @@ const testimonials = [
       "The virtual assessment platform has revolutionized our underwriting process, reducing processing time by 60% while maintaining accuracy.",
     author: "Dr. Sarah Johnson",
     role: "Chief Medical Officer, InsureTech Inc.",
-    image: "/images/testimonial1.jpg",
+    image: "/testi.jpg",
   },
   {
     quote:
       "Medstra's AI-powered assessments have significantly improved our customer experience while ensuring thorough medical evaluations.",
     author: "Michael Chen",
     role: "Head of Innovation, Global Insurance Group",
-    image: "/images/testimonial2.jpg",
+    image: "/testi.jpg",
   },
 ];
 
