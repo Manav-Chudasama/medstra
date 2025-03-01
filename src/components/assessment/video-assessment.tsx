@@ -17,12 +17,13 @@ interface VideoAssessmentProps {
     weight: string;
     smoker: string;
     exerciseFrequency: string;
+    medicalReportText?: string;
   };
   selectedLanguage: Language;
 }
 
 export function VideoAssessment({ onBack, onNext, assessmentType, preAssessmentData, selectedLanguage }: VideoAssessmentProps) {
-  const { height, weight, smoker, exerciseFrequency } = preAssessmentData;
+  const { height, weight, smoker, exerciseFrequency, medicalReportText } = preAssessmentData;
 
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
@@ -99,11 +100,10 @@ export function VideoAssessment({ onBack, onNext, assessmentType, preAssessmentD
             smoker: smoker === "yes",
             exerciseFrequency: exerciseFrequency,
             type: assessmentType,
-            language: selectedLanguage
+            language: selectedLanguage,
+            medicalReportText
           }
         } />}
-
-        
       </div>
 
       <div className="flex justify-between pt-6">

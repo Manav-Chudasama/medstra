@@ -761,6 +761,67 @@ Start with a professional greeting, introduce the specific type of assessment, a
     };
   };
 
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !avatar) return;
+
+    // Show loading message
+    setMessageStream((prev) => [
+      ...prev,
+      { sender: "System", text: "Processing medical report..." },
+    ]);
+
+    // Create FormData object
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Extract text from document
+      const response = await fetch("/api/extract-text", {
+        method: "POST",
+        body: formData,
+      });
+
+      const { text } = await response.json();
+
+      // Add the document text to chat
+      setMessageStream((prev) => [
+        ...prev,
+        { sender: "User", text: `Uploaded medical report: ${file.name}` },
+      ]);
+
+      // Update avatar's knowledge base with the extracted text
+      const updatedKnowledgeBase = `${avatar.knowledgeBase}\n\nMedical Report Information:\n${text}`;
+      
+      // Restart avatar with updated knowledge base
+      await avatar.createStartAvatar({
+        quality: AvatarQuality.High,
+        voice: {
+          rate: 1.5,
+          emotion: VoiceEmotion.FRIENDLY,
+        },
+        disableIdleTimeout: true,
+        avatarName: "Ann_Doctor_Sitting_public",
+        knowledgeBase: updatedKnowledgeBase,
+        language: preAssessmentData.language,
+      });
+
+      // Inform user that the report has been processed
+      await avatar.speak({
+        text: "I've processed your medical report and incorporated the information into our assessment. Would you like me to summarize the key findings from the report?",
+        taskType: TaskType.TALK,
+        taskMode: TaskMode.SYNC,
+      });
+
+    } catch (error) {
+      console.error("Error processing document:", error);
+      setMessageStream((prev) => [
+        ...prev,
+        { sender: "System", text: "Error processing medical report. Please try again." },
+      ]);
+    }
+  };
+
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-col">
@@ -809,7 +870,9 @@ Start with a professional greeting, introduce the specific type of assessment, a
               <div
                 key={index}
                 className={`text-sm ${
-                  msg.sender === "AI" ? "text-gray-700" : "text-blue-600"
+                  msg.sender === "AI" ? "text-gray-700" : 
+                  msg.sender === "System" ? "text-orange-600" :
+                  "text-blue-600"
                 }`}
               >
                 <strong>{msg.sender}: </strong>
@@ -833,11 +896,24 @@ Start with a professional greeting, introduce the specific type of assessment, a
               className="hidden"
               id="image-upload"
             />
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={handleDocumentUpload}
+              className="hidden"
+              id="document-upload"
+            />
             <Button
               onClick={() => document.getElementById("image-upload")?.click()}
               variant="outline"
             >
               Upload Image
+            </Button>
+            <Button
+              onClick={() => document.getElementById("document-upload")?.click()}
+              variant="outline"
+            >
+              Upload Report
             </Button>
             <Button onClick={() => handleSendMessage()} disabled={!message}>
               Send
@@ -1003,6 +1079,7 @@ class APIError extends Error {
 class StreamingAvatar {
   public room: Room | null = null;
   public mediaStream: MediaStream | null = null;
+  public knowledgeBase: string = '';
 
   private readonly token: string;
   private readonly basePath: string;
@@ -1030,6 +1107,7 @@ class StreamingAvatar {
     const sessionInfo = await this.newSession(requestData);
     this.sessionId = sessionInfo.session_id;
     this.language = requestData.language;
+    this.knowledgeBase = requestData.knowledgeBase || '';
 
     const room = new Room({
       adaptiveStream: true,
