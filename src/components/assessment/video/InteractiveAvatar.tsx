@@ -401,6 +401,7 @@ export default function InteractiveAvatar({
     exerciseFrequency: string;
     type: string;
     language: Language;
+    medicalReportText?: string;
   };
 }) {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -606,6 +607,11 @@ Patient Profile:
 - Smoking Status: ${preAssessmentData.smoker ? "Smoker" : "Non-smoker"}
 - Exercise Frequency: ${preAssessmentData.exerciseFrequency}
 
+${preAssessmentData.medicalReportText ? `
+Medical History:
+${preAssessmentData.medicalReportText}
+` : ''}
+
 Communication Guidelines:
 - Keep responses concise and conversational
 - Use clear, non-technical language
@@ -615,6 +621,7 @@ Communication Guidelines:
 - Provide clear explanations for medical terms
 - Address immediate concerns within scope
 - Stay focused on relevant systems for specific assessments
+${preAssessmentData.medicalReportText ? `- Reference and incorporate information from the provided medical report when relevant` : ''}
 
 Report Generation:
 When assessment is complete, generate two reports:
@@ -625,6 +632,7 @@ When assessment is complete, generate two reports:
 - Specific recommendations
 - Follow-up suggestions
 - Lifestyle modifications
+${preAssessmentData.medicalReportText ? `- Comparison with previous medical reports` : ''}
 
 2. Underwriting Report:
 - Risk assessment summary
@@ -632,17 +640,21 @@ When assessment is complete, generate two reports:
 - Insurance-relevant factors
 - HIPAA-compliant documentation
 - Risk classification recommendation
+${preAssessmentData.medicalReportText ? `- Historical medical context from provided reports` : ''}
 
 Important Instructions:
 - Maintain HIPAA compliance throughout
 - Stay within designated time limits
 - Focus on insurance-relevant factors
 - Document all responses systematically
+${preAssessmentData.medicalReportText ? `- Consider historical medical data in your assessment` : ''}
 - When you determine it's time to generate reports, end your last spoken message with a \b tag
 - Do not mention the \b tag in speech - it's only used as a signal
 
 Initial Greeting:
-Start with a professional greeting, introduce the specific type of assessment, and explain the expected duration and process.`,
+${preAssessmentData.medicalReportText ? 
+  `Start with a professional greeting, acknowledge that you've reviewed their medical history, introduce the specific type of assessment, and explain the expected duration and process.` :
+  `Start with a professional greeting, introduce the specific type of assessment, and explain the expected duration and process.`}`,
         language: preAssessmentData.language,
       });
 

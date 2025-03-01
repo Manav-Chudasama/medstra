@@ -49,7 +49,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
 
-    return NextResponse.json({ text });
+    // Format the extracted text in a structured way
+    const formattedText = `
+Previous Medical Report Information:
+--------------------------------
+Document Type: ${file.type}
+Document Name: ${file.name}
+Upload Date: ${new Date().toISOString()}
+
+Report Content:
+-------------
+${text}
+
+Note: This medical report has been automatically processed and added to your assessment. The AI examiner will take this information into account during your assessment.
+--------------------------------
+`;
+
+    return NextResponse.json({ text: formattedText });
   } catch (error) {
     console.error('Error processing file:', error);
     return NextResponse.json({ error: 'Error processing file' }, { status: 500 });
