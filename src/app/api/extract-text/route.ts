@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createWorker } from 'tesseract.js';
-import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocumentProxy } from 'pdfjs-dist';
 import mammoth from 'mammoth';
-
-// Configure the worker source
-if (typeof window === 'undefined') {
-  const pdfjsWorker = require('pdfjs-dist/build/pdf.worker.js');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-}
 
 export async function POST(request: Request) {
   try {
@@ -26,9 +18,16 @@ export async function POST(request: Request) {
     // Handle different file types
     if (fileType === 'application/pdf') {
       try {
+        // Dynamic import pdf.js only when needed
+        const pdfjsLib = await import('pdfjs-dist/build/pdf.js');
+        
+        // Configure the worker
+        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.js');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
+
         // Load the PDF document
-        const loadingTask = pdfjsLib.getDocument(new Uint8Array(buffer));
-        const pdf: PDFDocumentProxy = await loadingTask.promise;
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+        const pdf = await loadingTask.promise;
         const numPages = pdf.numPages;
         
         // Extract text from each page
