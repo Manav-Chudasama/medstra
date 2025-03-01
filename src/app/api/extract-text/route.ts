@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createWorker } from 'tesseract.js';
 import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+
+// Configure PDF.js for Node environment
+const pdfjsWorker = require('pdfjs-dist/legacy/build/pdf.worker.entry');
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export async function POST(request: Request) {
   try {
@@ -18,30 +23,40 @@ export async function POST(request: Request) {
     // Handle different file types
     if (fileType === 'application/pdf') {
       try {
-        // Dynamic import pdf.js only when needed
-        const pdfjsLib = await import('pdfjs-dist/build/pdf.js');
+        // Convert ArrayBuffer to Uint8Array
+        const uint8Array = new Uint8Array(buffer);
         
-        // Configure the worker
-        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.js');
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
-
         // Load the PDF document
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+        const loadingTask = pdfjsLib.getDocument({
+          data: uint8Array,
+          verbosity: 0,
+          disableFontFace: true
+        });
+        
         const pdf = await loadingTask.promise;
         const numPages = pdf.numPages;
         
         // Extract text from each page
         for (let i = 1; i <= numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const pageText = content.items
-            .map((item: any) => item.str)
-            .join(' ');
-          text += pageText + '\n\nPage ' + i + '\n-------------------\n';
+          try {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items
+              .map((item: any) => item.str)
+              .join(' ');
+            text += `\n\nPage ${i}\n-------------------\n${pageText}`;
+          } catch (pageError) {
+            console.error(`Error processing page ${i}:`, pageError);
+            text += `\n\nPage ${i}\n-------------------\nError: Could not extract text from this page.`;
+          }
+        }
+
+        if (!text.trim()) {
+          throw new Error('No text could be extracted from the PDF');
         }
       } catch (pdfError) {
         console.error('PDF processing error:', pdfError);
-        throw new Error('Failed to process PDF document');
+        throw new Error(pdfError instanceof Error ? pdfError.message : 'Failed to process PDF document');
       }
     } else if (fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       // Process Word documents
