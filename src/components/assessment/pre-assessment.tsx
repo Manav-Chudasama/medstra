@@ -156,7 +156,7 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
             <div className="flex items-center gap-2">
               <Input
                 type="file"
-                accept=".pdf,.doc,.docx,.txt"
+                accept=".pdf,.doc,.docx,.txt,image/*"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="medical-report"
@@ -168,7 +168,7 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
                 onClick={() => document.getElementById("medical-report")?.click()}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Upload Medical Report
+                Upload Medical Report (PDF/Images)
               </Button>
             </div>
             {uploadStatus.type && (
@@ -182,6 +182,9 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
                 </AlertDescription>
               </Alert>
             )}
+            <p className="text-sm text-muted-foreground">
+              Supported formats: PDF, Word documents, images (JPG, PNG, etc.)
+            </p>
           </div>
         </div>
       </div>
