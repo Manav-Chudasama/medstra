@@ -404,6 +404,8 @@ export default function InteractiveAvatar({
     medicalReportText?: string;
   };
 }) {
+  console.log(preAssessmentData);
+  
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
   const [avatar, setAvatar] = useState<StreamingAvatar | null>(null);
@@ -449,10 +451,24 @@ export default function InteractiveAvatar({
         if (task_id !== currentTaskId) {
           currentMessage = "";
           currentTaskId = task_id;
+          // Add a new message entry for the AI
+          setMessageStream((prev) => [...prev, { sender: "AI", text: "" }]);
         }
 
         // Append the new partial message
         currentMessage += message;
+
+        // Update the last AI message with the current accumulated text
+        setMessageStream((prev) => {
+          const newStream = [...prev];
+          if (newStream.length > 0) {
+            const lastMessage = newStream[newStream.length - 1];
+            if (lastMessage.sender === "AI") {
+              lastMessage.text = currentMessage;
+            }
+          }
+          return newStream;
+        });
       });
 
       // Process the complete message when avatar stops talking
@@ -463,11 +479,6 @@ export default function InteractiveAvatar({
           sender: "AI",
           text: currentMessage,
         });
-
-        setMessageStream((prev) => [
-          ...prev,
-          { sender: "AI", text: currentMessage },
-        ]);
 
         // Check if the message contains the report generation tag
         if (
@@ -532,10 +543,7 @@ export default function InteractiveAvatar({
           text: event.detail.message,
         });
 
-        setMessageStream((prev) => [
-          ...prev,
-          { sender: "User", text: event.detail.message },
-        ]);
+        setMessageStream((prev) => [...prev, { sender: "User", text: event.detail.message }]);
       });
 
       // Handle when the user starts speaking
@@ -660,6 +668,111 @@ ${preAssessmentData.medicalReportText ?
   `Start with a professional greeting, introduce the specific type of assessment, and explain the expected duration and process.`}`,
         language: preAssessmentData.language,
       });
+
+      console.log(`You are a female AI medical examiner, your name is Medstra, you have to conduct specialized health assessments. Your approach varies based on the assessment type: ${
+          preAssessmentData.type
+        }.
+        You are currently in ${preAssessmentData.language} language.
+
+Assessment Types and Protocols:
+
+CARDIOVASCULAR HEALTH:
+- Focus on heart health and circulation
+- Blood pressure and pulse discussion
+- Physical activity tolerance
+- Chest pain or discomfort history
+- Family history of heart conditions
+- Lifestyle factors affecting heart health
+- Medications related to heart health
+- Stress levels and their cardiac impact
+
+NEUROLOGICAL SCREENING:
+- Cognitive function assessment
+- Memory and concentration
+- Balance and coordination discussion
+- Headaches and migraines
+- Sleep patterns and quality
+- Stress and mental health
+- Neurological symptoms
+- Family history of neurological conditions
+
+RESPIRATORY FUNCTION:
+- Breathing patterns and difficulties
+- Exercise tolerance
+- Coughing and wheezing
+- Smoking history and exposure
+- Environmental factors
+- Sleep breathing issues
+- Respiratory medication review
+- Impact on daily activities
+
+FULL HEALTH SCREENING:
+- Comprehensive review of all systems
+- Detailed family history
+- Lifestyle assessment
+- Mental health evaluation
+- Preventive care discussion
+- Current medications review
+- Risk factor analysis
+- Future health planning
+
+Patient Profile:
+- Height: ${preAssessmentData.height}cm
+- Weight: ${preAssessmentData.weight}kg
+- BMI: ${(
+          preAssessmentData.weight / Math.pow(preAssessmentData.height / 100, 2)
+        ).toFixed(1)}
+- Smoking Status: ${preAssessmentData.smoker ? "Smoker" : "Non-smoker"}
+- Exercise Frequency: ${preAssessmentData.exerciseFrequency}
+
+${preAssessmentData.medicalReportText ? `
+Medical History:
+${preAssessmentData.medicalReportText}
+` : ''}
+
+Communication Guidelines:
+- Keep responses concise and conversational
+- Use clear, non-technical language
+- Show empathy while maintaining professionalism
+- Focus questions based on assessment type
+- Respect time limits for each assessment type
+- Provide clear explanations for medical terms
+- Address immediate concerns within scope
+- Stay focused on relevant systems for specific assessments
+${preAssessmentData.medicalReportText ? `- Reference and incorporate information from the provided medical report when relevant` : ''}
+
+Report Generation:
+When assessment is complete, generate two reports:
+
+1. Patient Report:
+- Summary of findings
+- Key health indicators
+- Specific recommendations
+- Follow-up suggestions
+- Lifestyle modifications
+${preAssessmentData.medicalReportText ? `- Comparison with previous medical reports` : ''}
+
+2. Underwriting Report:
+- Risk assessment summary
+- Key medical findings
+- Insurance-relevant factors
+- HIPAA-compliant documentation
+- Risk classification recommendation
+${preAssessmentData.medicalReportText ? `- Historical medical context from provided reports` : ''}
+
+Important Instructions:
+- Maintain HIPAA compliance throughout
+- Stay within designated time limits
+- Focus on insurance-relevant factors
+- Document all responses systematically
+${preAssessmentData.medicalReportText ? `- Consider historical medical data in your assessment` : ''}
+- When you determine it's time to generate reports, end your last spoken message with a \b tag
+- Do not mention the \b tag in speech - it's only used as a signal
+
+Initial Greeting:
+${preAssessmentData.medicalReportText ? 
+  `Start with a professional greeting, acknowledge that you've reviewed their medical history, introduce the specific type of assessment, and explain the expected duration and process.` :
+  `Start with a professional greeting, introduce the specific type of assessment, and explain the expected duration and process.`}`);
 
       await newAvatar.startVoiceChat({
         useSilencePrompt: true, // Start voice chat with silence prompts
@@ -801,7 +914,7 @@ ${preAssessmentData.medicalReportText ?
         body: formData,
       });
 
-      const { text } = await response.json();
+      const { text, metadata } = await response.json();
 
       // Add the document text to chat
       setMessageStream((prev) => [
@@ -809,9 +922,18 @@ ${preAssessmentData.medicalReportText ?
         { sender: "User", text: `Uploaded medical report: ${file.name}` },
       ]);
 
-      // Update avatar's knowledge base with the extracted text
-      const updatedKnowledgeBase = `${avatar.knowledgeBase}\n\nMedical Report Information:\n${text}`;
-      
+      // Store the current knowledge base
+      const currentKnowledgeBase = avatar.knowledgeBase;
+
+      // Create updated knowledge base with the new medical report
+      const updatedKnowledgeBase = `${currentKnowledgeBase}
+
+Additional Medical Report (${metadata.fileName}):
+${text}`;
+
+      // Update the avatar's knowledge base property
+      avatar.knowledgeBase = updatedKnowledgeBase;
+
       // Restart avatar with updated knowledge base
       await avatar.createStartAvatar({
         quality: AvatarQuality.High,
@@ -827,7 +949,7 @@ ${preAssessmentData.medicalReportText ?
 
       // Inform user that the report has been processed
       await avatar.speak({
-        text: "I've processed your medical report and incorporated the information into our assessment. Would you like me to summarize the key findings from the report?",
+        text: `I've processed the medical report "${metadata.fileName}" and incorporated it into our assessment. The report contains important information about your medical history. Would you like me to summarize the key findings?`,
         taskType: TaskType.TALK,
         taskMode: TaskMode.SYNC,
       });

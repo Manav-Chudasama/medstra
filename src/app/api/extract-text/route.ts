@@ -23,41 +23,36 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4-vision-preview',
+        model: "gpt-4o-mini",
         messages: [
           {
-            role: 'user',
+            role: "user",
             content: [
               {
-                type: 'text',
-                text: `You are a medical expert specialized in interpreting doctors' handwriting and medical documents. Please:
+                type: "text",
+                text: `You are a medical expert specialized in interpreting doctors' handwriting and medical documents. Analyze this document and provide the information in plain text format without any special characters, markdown, or formatting symbols. Simply use line breaks and basic punctuation.
 
-1. Carefully analyze this medical document, paying special attention to:
-   - Handwritten prescriptions and notes
-   - Medical abbreviations and symbols
-   - Dosage instructions and frequencies
-   - Diagnostic notes and medical terminology
+Please analyze and extract:
 
-2. Extract and structure the following information:
-   - Patient Information (if present)
-   - Vital Signs/Measurements
-   - Diagnoses (both primary and secondary)
-   - Prescribed Medications (including dosages and frequencies)
-   - Treatment Plans
-   - Lab Results
-   - Follow-up Instructions
-   - Any warnings or special instructions
+1. Patient Information (if present)
+2. Vital Signs/Measurements
+3. Diagnoses (primary and secondary)
+4. Prescribed Medications with dosages
+5. Treatment Plans
+6. Lab Results
+7. Follow-up Instructions
+8. Any warnings or special instructions
 
-3. If you encounter unclear handwriting:
-   - Use medical context to make informed interpretations
-   - Indicate any uncertainties with [?]
-   - Consider common medical abbreviations and shorthand
-   - Cross-reference with standard medical terminology
+For unclear handwriting:
+- Use medical context for interpretation
+- Mark uncertainties with [?]
+- Consider medical abbreviations
+- Cross-reference with standard terminology
 
-Please format the information in a clear, structured way and explain any medical terminology in layman's terms where appropriate.`
+Format your response as simple text with clear sections. Do not use any special formatting characters, just use line breaks and basic punctuation.`
               },
               {
-                type: 'image',
+                type: "image_url",
                 image_url: {
                   url: dataUrl
                 }
@@ -65,46 +60,27 @@ Please format the information in a clear, structured way and explain any medical
             ]
           }
         ],
-        max_tokens: 4096
+        max_tokens: 4096,
+        temperature: 0.2, // Lower temperature for more consistent medical analysis
+        store: true // Required for gpt-4o-mini
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to analyze document with GPT-4 Vision');
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to analyze document');
     }
 
     const result = await response.json();
     const analyzedText = result.choices[0].message.content;
 
-    // Format the extracted text with improved structure
-    const formattedText = `
-Medical Report Analysis
-======================
-Document Information:
--------------------
-Type: ${file.type}
-Name: ${file.name}
-Processed: ${new Date().toLocaleString()}
-
-Content Analysis:
----------------
-${analyzedText.trim()}
-
-Processing Notes:
----------------
-- Document has been analyzed using GPT-4 Vision AI
-- Analysis includes interpretation of both textual and visual elements
-- This report will be incorporated into your medical assessment
-======================
-`;
-
     return NextResponse.json({ 
-      text: formattedText,
+      text: analyzedText.trim(),
       metadata: {
         fileType: file.type,
         fileName: file.name,
         processedAt: new Date().toISOString(),
-        processingMethod: 'GPT-4 Vision Analysis'
+        processingMethod: 'AI Vision Analysis'
       }
     });
   } catch (error) {

@@ -77,13 +77,15 @@ export function PreAssessment({ onBack, onNext }: PreAssessmentProps) {
       alert("Please fill in all required fields.");
       return;
     }
+    console.log(medicalReportText);
+    
     // Proceed to the next step with the collected data
     onNext({ 
       height, 
       weight, 
       smoker, 
       exerciseFrequency,
-      medicalReportText 
+      medicalReportText: medicalReportText || ""
     });
   };
 

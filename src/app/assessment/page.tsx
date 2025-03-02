@@ -45,6 +45,7 @@ export default function AssessmentPage() {
   const [smoker, setSmoker] = useState("no");
   const [exerciseFrequency, setExerciseFrequency] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(Language.English);
+  const [medicalReportText, setMedicalReportText] = useState<string>("");
 
   useEffect(() => {
     // If no assessment type is selected, redirect to select page
@@ -88,7 +89,8 @@ export default function AssessmentPage() {
                     height,
                     weight,
                     smoker,
-                    exerciseFrequency
+                    exerciseFrequency,
+                    medicalReportText
                   }}
                   assessmentType={assessmentType}
                   selectedLanguage={selectedLanguage}
@@ -111,6 +113,7 @@ export default function AssessmentPage() {
                           setSmoker(data.smoker);
                           setExerciseFrequency(data.exerciseFrequency);
                           setCurrentStep(3);
+                          setMedicalReportText(data.medicalReportText || "");
                         }}
                       />
                     )}
