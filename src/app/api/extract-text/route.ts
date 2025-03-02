@@ -1,82 +1,80 @@
 import { NextResponse } from 'next/server';
-import { createWorker } from 'tesseract.js';
-import mammoth from 'mammoth';
-import pdf from 'pdf-parse';
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const language = formData.get('language') as string || 'eng'; // Default to English if not specified
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    let text = '';
-    const fileType = file.type;
+    // Convert file to base64
     const buffer = await file.arrayBuffer();
+    const base64Data = Buffer.from(buffer).toString('base64');
+    const mimeType = file.type;
+    const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
-    // Handle different file types
-    if (fileType === 'application/pdf') {
-      try {
-        const pdfBuffer = Buffer.from(buffer);
-        const data = await pdf(pdfBuffer);
-        
-        text = data.text;
+    // Call OpenAI Vision API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4-vision-preview',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `You are a medical expert specialized in interpreting doctors' handwriting and medical documents. Please:
 
-        if (!text.trim()) {
-          throw new Error('No text could be extracted from the PDF');
-        }
+1. Carefully analyze this medical document, paying special attention to:
+   - Handwritten prescriptions and notes
+   - Medical abbreviations and symbols
+   - Dosage instructions and frequencies
+   - Diagnostic notes and medical terminology
 
-        // Improve formatting with proper page breaks and section markers
-        text = text
-          .split('\n')
-          .filter(line => line.trim()) // Remove empty lines
-          .join('\n\n');
-      } catch (pdfError) {
-        console.error('PDF processing error:', pdfError);
-        throw new Error(pdfError instanceof Error ? pdfError.message : 'Failed to process PDF document');
-      }
-    } else if (fileType === 'application/msword' || fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-      text = result.value;
-    } else if (fileType === 'text/plain') {
-      text = new TextDecoder().decode(buffer);
-    } else if (fileType.startsWith('image/')) {
-      try {
-        // Initialize worker with language support
-        const worker = await createWorker(language);
-        
-        // Convert buffer to base64
-        const base64Data = Buffer.from(buffer).toString('base64');
-        const imageData = `data:${fileType};base64,${base64Data}`;
-        
-        // Configure worker for better accuracy
-        await worker.setParameters({
-          tessedit_ocr_engine_mode: 1, // Legacy + LSTM mode
-          preserve_interword_spaces: '1',
-        });
+2. Extract and structure the following information:
+   - Patient Information (if present)
+   - Vital Signs/Measurements
+   - Diagnoses (both primary and secondary)
+   - Prescribed Medications (including dosages and frequencies)
+   - Treatment Plans
+   - Lab Results
+   - Follow-up Instructions
+   - Any warnings or special instructions
 
-        // Perform OCR
-        const { data } = await worker.recognize(imageData);
+3. If you encounter unclear handwriting:
+   - Use medical context to make informed interpretations
+   - Indicate any uncertainties with [?]
+   - Consider common medical abbreviations and shorthand
+   - Cross-reference with standard medical terminology
 
-        text = data.text;
+Please format the information in a clear, structured way and explain any medical terminology in layman's terms where appropriate.`
+              },
+              {
+                type: 'image',
+                image_url: {
+                  url: dataUrl
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 4096
+      })
+    });
 
-        // Post-process OCR text
-        text = text
-          .replace(/[^\S\r\n]+/g, ' ') // Replace multiple spaces with single space
-          .replace(/[\r\n]+/g, '\n\n') // Normalize line breaks
-          .trim();
-
-        await worker.terminate();
-      } catch (ocrError) {
-        console.error('OCR processing error:', ocrError);
-        throw new Error('Failed to process image document');
-      }
-    } else {
-      return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
+    if (!response.ok) {
+      throw new Error('Failed to analyze document with GPT-4 Vision');
     }
+
+    const result = await response.json();
+    const analyzedText = result.choices[0].message.content;
 
     // Format the extracted text with improved structure
     const formattedText = `
@@ -87,18 +85,15 @@ Document Information:
 Type: ${file.type}
 Name: ${file.name}
 Processed: ${new Date().toLocaleString()}
-${fileType.startsWith('image/') ? `OCR Language: ${language}` : ''}
 
 Content Analysis:
 ---------------
-${text.trim()}
+${analyzedText.trim()}
 
 Processing Notes:
 ---------------
-- Document has been automatically processed and analyzed
-- Text extraction method: ${fileType.startsWith('image/') ? 'OCR (Optical Character Recognition)' : 
-  fileType === 'application/pdf' ? 'PDF Text Extraction' :
-  fileType.includes('word') ? 'Word Document Processing' : 'Plain Text Processing'}
+- Document has been analyzed using GPT-4 Vision AI
+- Analysis includes interpretation of both textual and visual elements
 - This report will be incorporated into your medical assessment
 ======================
 `;
@@ -106,10 +101,10 @@ Processing Notes:
     return NextResponse.json({ 
       text: formattedText,
       metadata: {
-        fileType,
+        fileType: file.type,
         fileName: file.name,
         processedAt: new Date().toISOString(),
-        processingMethod: fileType.startsWith('image/') ? 'OCR' : 'Direct Text Extraction'
+        processingMethod: 'GPT-4 Vision Analysis'
       }
     });
   } catch (error) {
