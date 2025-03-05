@@ -32,6 +32,7 @@ export default function Home() {
                 Experience the future of medical assessments with our AI-powered
                 platform. Fast, accurate, and convenient insurance underwriting
                 process.
+                
               </p>
               <div className="flex gap-4 pt-4">
                 <Button asChild size="lg" className="group">
